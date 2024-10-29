@@ -17,8 +17,8 @@ spring:
   # JPA configuration
   jpa:
     hibernate:
-      ddl-auto: ${HIBERNATE_DDL_AUTO}
-    show-sql: ${SHOW_SQL}
+      ddl-auto: create-drop
+    show-sql: true
     properties:
       hibernate:
         format_sql: true

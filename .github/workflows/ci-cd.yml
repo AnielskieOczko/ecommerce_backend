@@ -10,6 +10,13 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  MYSQL_DATABASE: ecommerce
+  MYSQL_ROOT_PASSWORD: root
+  MYSQL_USER: ecommerce_user
+  MYSQL_PASSWORD: userpassword
+  SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/ecommerce
+  SPRING_DATASOURCE_USERNAME: ecommerce_user
+  SPRING_DATASOURCE_PASSWORD: userpassword
 
 jobs:
   build-and-publish:

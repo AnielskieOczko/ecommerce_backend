@@ -1,7 +1,6 @@
 spring:
   config:
     import: optional:secrets.properties
-  # Database configuration
   datasource:
     url: ${SPRING_DATASOURCE_URL}?useSSL=true&serverTimezone=UTC&characterEncoding=UTF-8
     username: ${DB_USERNAME}
@@ -13,7 +12,6 @@ spring:
       idle-timeout: 300000
       connection-timeout: 20000
       max-lifetime: 1200000
-
   jpa:
     show-sql: true
     hibernate:
@@ -24,3 +22,13 @@ spring:
       hibernate:
         jdbc:
           time_zone: UTC
+  logging:
+    level:
+      org.springframework.web: INFO
+      org.hibernate: INFO
+      org.hibernate.SQL: DEBUG # Show SQL
+      org.springframework.orm.jpa: DEBUG
+      org.springframework.data.jpa: DEBUG
+      # Uncomment for more verbose logging (use cautiously):
+      # org.hibernate.type: TRACE
+      # org.hibernate.stat: DEBUG

@@ -10,6 +10,13 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  MYSQL_DATABASE: ecommerce
+  MYSQL_ROOT_PASSWORD: root
+  MYSQL_USER: ecommerce_user
+  MYSQL_PASSWORD: userpassword
+  SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/ecommerce
+  SPRING_DATASOURCE_USERNAME: ecommerce_user
+  SPRING_DATASOURCE_PASSWORD: userpassword
 
 jobs:
   build-and-publish:
@@ -18,6 +25,21 @@ jobs:
       contents: read
       packages: write
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: ${{ env.MYSQL_DATABASE }}
+          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
+          MYSQL_USER: ${{ env.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ env.MYSQL_PASSWORD }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
     steps:
       - uses: actions/checkout@v4
 
@@ -51,7 +73,6 @@ jobs:
             type=sha,format=long
             type=semver,pattern={{version}}
             type=raw,value=latest,enable={{is_default_branch}}
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -78,7 +99,11 @@ jobs:
       # Pull the latest image that was just built
       - name: Set image name
         run: |
-          echo "IMAGE_TO_SCAN=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          image_name="${{ env.IMAGE_NAME }}"
+          lowercase_image_name=$(echo "$image_name" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_TO_SCAN=${{ env.REGISTRY }}/$lowercase_image_name:${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+      #        run: |
+      #          echo "IMAGE_TO_SCAN=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3

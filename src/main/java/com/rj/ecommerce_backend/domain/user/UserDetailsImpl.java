@@ -8,26 +8,26 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class UserPrincipal implements UserDetails {
+public class UserDetailsImpl implements UserDetails {
     private Long id;
     private String username;
     private String password;
     private Collection<? extends GrantedAuthority> authorities;
 
-    public UserPrincipal(Long id, String username, String password,
-                         Collection<? extends GrantedAuthority> authorities) {
+    public UserDetailsImpl(Long id, String username, String password,
+                           Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.authorities = authorities;
     }
 
-    public static UserPrincipal build(User user) {
+    public static UserDetailsImpl build(User user) {
         List<GrantedAuthority> authorities = user.getAuthorities().stream()
                 .map(authority -> new SimpleGrantedAuthority(authority.getName()))
                 .collect(Collectors.toList());
 
-        return new UserPrincipal(
+        return new UserDetailsImpl(
                 user.getId(),
                 user.getEmail(), // Use email as the username
                 user.getPassword(),

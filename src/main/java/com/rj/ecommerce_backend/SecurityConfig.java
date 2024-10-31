@@ -1,13 +1,11 @@
 package com.rj.ecommerce_backend;
 
-import com.rj.ecommerce_backend.domain.user.UserPrincipal;
+import com.rj.ecommerce_backend.domain.user.UserDetailsImpl;
 import com.rj.ecommerce_backend.domain.user.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractAuthenticationFilterConfigurer;
-import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -50,7 +48,7 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService(UserRepository userRepository) {
         return userEmail -> userRepository.findUserByEmail(userEmail)
-                .map(UserPrincipal::build)
+                .map(UserDetailsImpl::build)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + userEmail));
     }
 }

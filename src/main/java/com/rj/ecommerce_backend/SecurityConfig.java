@@ -1,10 +1,15 @@
 package com.rj.ecommerce_backend;
 
+import com.rj.ecommerce_backend.domain.user.UserPrincipal;
+import com.rj.ecommerce_backend.domain.user.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractAuthenticationFilterConfigurer;
+import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -14,25 +19,38 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // Enable form login
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .authorizeHttpRequests(authz -> authz
+                .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/user/**").hasRole("USER")
-                        .requestMatchers("/info/**").authenticated()
-                        .anyRequest().permitAll() // Allow all other requests (important for the default login page)
+                        .requestMatchers("/**").permitAll()
+                        .anyRequest().authenticated()
                 )
-                .formLogin(AbstractAuthenticationFilterConfigurer::permitAll // Allow all to access the login URL
+                .formLogin(formLogin -> formLogin
+                        .usernameParameter("email")
+                        .permitAll() // Allow all to access the login URL
                 );
-
+//                .formLogin(form -> form
+////                        .loginPage("/login")
+//                        .usernameParameter("email")
+//                        .permitAll()
+//                )
+//                .logout(LogoutConfigurer::permitAll
+//                );
 
         return http.build();
     }
 
-
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    public UserDetailsService userDetailsService(UserRepository userRepository) {
+        return userEmail -> userRepository.findUserByEmail(userEmail)
+                .map(UserPrincipal::build)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + userEmail));
     }
 }

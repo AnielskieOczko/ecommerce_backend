@@ -6,7 +6,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @AllArgsConstructor
@@ -14,27 +16,33 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
+    private final AuthorityRepository authorityRepository;
     private final PasswordEncoder passwordEncoder;
 
+
     @Override
-    public Optional<User> findUserByName(String name) {
-        return userRepository.findUserByUsername(name);
+    public List<User> findAllUsers() {
+        return userRepository.findAll();
     }
 
     @Override
-    public void saveUser(User user) {
+    public Optional<User> findUserByName(String name) {
+        return userRepository.findUserByName(name);
+    }
 
-        Role userRole = roleRepository.findByName("ROLE_USER");
+    @Override
+    public Optional<User> findUserByEmail(String email) {
+        return userRepository.findUserByEmail(email);
+    }
 
-        HashSet<Role> roles = new HashSet<>();
-        roles.add(userRole);
 
+    public User saveUser(User user, Set<String> roleNames) {
+        Set<Authority> authorities = authorityRepository.findByNameIn(roleNames);
+        if (authorities.size() != roleNames.size()) {
+            throw new IllegalArgumentException("One or more authorities not found");
+        }
+        user.setAuthorities(authorities);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setEnabled(1);
-
-        user.setRoles(roles);
-        userRepository.save(user);
-
+        return userRepository.save(user);
     }
 }

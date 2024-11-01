@@ -10,13 +10,13 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  MYSQL_DATABASE: ecommerce
-  MYSQL_ROOT_PASSWORD: root
-  MYSQL_USER: ecommerce_user
-  MYSQL_PASSWORD: userpassword
-  SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/ecommerce
-  SPRING_DATASOURCE_USERNAME: ecommerce_user
-  SPRING_DATASOURCE_PASSWORD: userpassword
+  MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+  MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+  MYSQL_USER: ${{ secrets.MYSQL_USER }}
+  MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+  SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+  SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+  SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
 
 jobs:
   build-and-publish:

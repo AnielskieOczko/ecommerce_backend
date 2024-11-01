@@ -54,14 +54,14 @@ jobs:
       # Verify MySQL Connection
       - name: Verify MySQL Connection
         run: |
-          while ! mysqladmin ping -h"127.0.0.1" -P"3306" --silent; do
+          while ! mysqladmin ping -h"mysql" -P"3306" -u"${{ secrets.MYSQL_USER }}" -p"${{ secrets.MYSQL_PASSWORD }}" --silent; do
             sleep 1
           done
 
       # Build and test with proper environment variables
       - name: Build and Test with Maven
         env:
-          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/${{ secrets.MYSQL_DATABASE }}
+          SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${{ secrets.MYSQL_DATABASE }}
           SPRING_DATASOURCE_USERNAME: ${{ secrets.MYSQL_USER }}
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
         run: |

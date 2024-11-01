@@ -1,58 +1,55 @@
 spring:
-  # Common configuration
   application:
     name: spring-boot-mysql-app
 
-  # Database configuration
+  # Default profile configuration
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:myapp}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:password}
     driver-class-name: com.mysql.cj.jdbc.Driver
-
-  # JPA/Hibernate configuration
   jpa:
-    hibernate:
-      ddl-auto: update  # Be careful with this in production
-    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
 
-  # Flyway configuration (optional, for database migrations)
-#  flyway:
-#    enabled: true
-#    baseline-on-migrate: true
-#    locations: classpath:db/migration
+---
+# Development profile (for local container development)
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:mysql://${SPRING_DATASOURCE_HOST:mysql}:${SPRING_DATASOURCE_PORT:3306}/${SPRING_DATASOURCE_DATABASE:devdb}?createDatabaseIfNotExist=true
+    username: ${SPRING_DATASOURCE_USERNAME:devuser}
+    password: ${SPRING_DATASOURCE_PASSWORD:devpass}
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
 
-# Server configuration
-server:
-  port: 8080
-  error:
-    include-message: always
-    include-binding-errors: always
-
-# Logging configuration
 logging:
   level:
     root: INFO
     org.springframework: INFO
-    com.yourpackage: DEBUG
+    com.rj.ecommerce_backend: DEBUG
     org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-
-# Custom application properties
-#app:
-#  security:
-#    jwt:
-#      secret: ${JWT_SECRET:default-secret-key}
-#      expiration: 86400000  # 24 hours in milliseconds
-#  cors:
-#    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
 ---
-# CI profile
+# Local profile (for running application locally without containers)
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:mysql://localhost:3306/localdb?createDatabaseIfNotExist=true
+    username: root
+    password: rootpass
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+---
+# CI profile (for GitHub Actions)
 spring:
   config:
     activate:
@@ -65,29 +62,6 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
----
-# Development profile
-spring:
-  config:
-    activate:
-      on-profile: dev
-  datasource:
-    url: jdbc:mysql://localhost:3306/ecommerce?useSSL=false
-  jpa:
-    show-sql: true
-
----
-# Test profile
-spring:
-  config:
-    activate:
-      on-profile: test
-  datasource:
-    url: jdbc:mysql://localhost:3306/ecommerce?useSSL=false
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: true
 
 ---
 # Production profile
@@ -96,8 +70,15 @@ spring:
     activate:
       on-profile: prod
   datasource:
-    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=true
+    url: ${PROD_DB_URL}
+    username: ${PROD_DB_USERNAME}
+    password: ${PROD_DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: none  # Disable automatic schema generation
+      ddl-auto: none
     show-sql: false
+
+logging:
+  level:
+    root: ERROR
+    org.springframework: WARN

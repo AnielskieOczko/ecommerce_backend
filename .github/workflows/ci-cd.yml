@@ -61,7 +61,7 @@ jobs:
       # Build and test with proper environment variables
       - name: Build and Test with Maven
         env:
-          SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${{ secrets.MYSQL_DATABASE }}
+          SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ecommerce
           SPRING_DATASOURCE_USERNAME: ${{ secrets.MYSQL_USER }}
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
         run: |

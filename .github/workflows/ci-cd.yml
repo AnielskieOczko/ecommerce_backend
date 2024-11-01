@@ -14,10 +14,10 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
-          MYSQL_USER: ${{ secrets.MYSQL_USER }}
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: testdb
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpass
+          MYSQL_ROOT_PASSWORD: rootpass
         ports:
           - 3306:3306
         options: >-
@@ -43,18 +43,13 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
-      - name: Build with Maven
+      - name: Build and Test
         env:
-          SPRING_PROFILES_ACTIVE: test
-          DB_HOST: localhost
-          DB_PORT: 3306
-          DB_NAME: ${{ secrets.MYSQL_DATABASE }}
-          DB_USERNAME: ${{ secrets.MYSQL_USER }}
-          DB_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          SPRING_PROFILES_ACTIVE: ci
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/testdb
+          SPRING_DATASOURCE_USERNAME: testuser
+          SPRING_DATASOURCE_PASSWORD: testpass
         run: mvn -B package --file pom.xml
-
-      - name: Run tests
-        run: mvn test
 
       - name: Upload test results
         if: always()
@@ -62,18 +57,3 @@ jobs:
         with:
           name: test-results
           path: target/surefire-reports
-
-#      - name: Build and analyze with SonarCloud
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-#        run: mvn verify sonar:sonar -Dsonar.projectKey=your-project-key -Dsonar.organization=your-org
-#
-      # Optional: Deploy to production
-#      - name: Deploy to Production
-#        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-#        env:
-#          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
-#        run: |
-#          echo "Add your deployment commands here"
-#          # Example: Deploy to a server or cloud platform

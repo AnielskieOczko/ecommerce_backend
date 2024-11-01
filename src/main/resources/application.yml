@@ -52,6 +52,20 @@ logging:
 #    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
 ---
+# CI profile
+spring:
+  config:
+    activate:
+      on-profile: ci
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/testdb
+    username: testuser
+    password: testpass
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+---
 # Development profile
 spring:
   config:

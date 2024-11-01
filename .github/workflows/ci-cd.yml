@@ -52,11 +52,11 @@ jobs:
           cache: maven
 
       # Verify MySQL Connection
-      - name: Verify MySQL Connection
-        run: |
-          while ! mysqladmin ping -h"mysql" -P"3306" -u"${{ secrets.MYSQL_USER }}" -p"${{ secrets.MYSQL_PASSWORD }}" --silent; do
-            sleep 1
-          done
+#      - name: Verify MySQL Connection
+#        run: |
+#          while ! mysqladmin ping -h"mysql" -P"3306" -u"${{ secrets.MYSQL_USER }}" -p"${{ secrets.MYSQL_PASSWORD }}" --silent; do
+#            sleep 1
+#          done
 
       # Build and test with proper environment variables
       - name: Build and Test with Maven

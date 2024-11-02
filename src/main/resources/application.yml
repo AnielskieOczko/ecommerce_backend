@@ -1,6 +1,6 @@
 spring:
   application:
-    name: spring-boot-mysql-app
+    name: ecommerce_backend
 
   # Default profile configuration
   datasource:
@@ -18,9 +18,9 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:mysql://${SPRING_DATASOURCE_HOST:mysql}:${SPRING_DATASOURCE_PORT:3306}/${SPRING_DATASOURCE_DATABASE:devdb}?createDatabaseIfNotExist=true
-    username: ${SPRING_DATASOURCE_USERNAME:devuser}
-    password: ${SPRING_DATASOURCE_PASSWORD:devpass}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${DB_USERNAME:devuser}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: create-drop
@@ -40,9 +40,9 @@ spring:
     activate:
       on-profile: local
   datasource:
-    url: jdbc:mysql://localhost:3306/localdb?createDatabaseIfNotExist=true
-    username: root
-    password: rootpass
+    url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:ecommerce_dev}?createDatabaseIfNotExist=true
+    username: ${DB_USERNAME:devuser}
+    password: ${DB_PASSWORD:devpass}
   jpa:
     hibernate:
       ddl-auto: create-drop

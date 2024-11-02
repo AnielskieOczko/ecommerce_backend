@@ -1,27 +1,84 @@
 spring:
-  config:
-    import: optional:secrets.properties
-  # Database configuration
-  datasource:
-    url: ${SPRING_DATASOURCE_URL}?useSSL=true&serverTimezone=UTC&characterEncoding=UTF-8
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
-      idle-timeout: 300000
-      connection-timeout: 20000
-      max-lifetime: 1200000
+  application:
+    name: ecommerce_backend
 
-  # JPA configuration
+  # Default profile configuration
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+
+---
+# Development profile (for local container development)
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${DB_USERNAME:devuser}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
-        jdbc:
-          time_zone: UTC
+
+logging:
+  level:
+    root: INFO
+    org.springframework: INFO
+    com.rj.ecommerce_backend: DEBUG
+    org.hibernate.SQL: DEBUG
+
+---
+# Local profile (for running application locally without containers)
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:ecommerce_dev}?createDatabaseIfNotExist=true
+    username: ${DB_USERNAME:devuser}
+    password: ${DB_PASSWORD:devpass}
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+---
+# CI profile (for GitHub Actions)
+spring:
+  config:
+    activate:
+      on-profile: ci
+  datasource:
+    url: jdbc:mysql://localhost:3306/testdb
+    username: testuser
+    password: testpass
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+---
+# Production profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${PROD_DB_URL}
+    username: ${PROD_DB_USERNAME}
+    password: ${PROD_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+
+logging:
+  level:
+    root: ERROR
+    org.springframework: WARN

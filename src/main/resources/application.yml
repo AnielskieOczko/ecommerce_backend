@@ -10,7 +10,8 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
-
+server:
+  port: 8080
 ---
 # Development profile (for local container development)
 spring:
@@ -48,6 +49,7 @@ spring:
       ddl-auto: create-drop
     show-sql: true
 
+
 ---
 # CI profile (for GitHub Actions)
 spring:
@@ -82,3 +84,7 @@ logging:
   level:
     root: ERROR
     org.springframework: WARN
+jwt:
+  secret: ${JWT_SECRET:default-dev-secret-key-base64-encoded}
+  expirationMs: 86400000  # 24 hours
+  # openssl rand -base64 64

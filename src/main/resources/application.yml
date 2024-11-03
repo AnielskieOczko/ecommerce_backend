@@ -40,7 +40,7 @@ spring:
     activate:
       on-profile: local
   datasource:
-    url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:ecommerce_dev}?createDatabaseIfNotExist=true
+    url: jdbc:mysql://localhost:${DB_PORT:3306}/${DB_NAME:ecommerce_dev}?createDatabaseIfNotExist=true
     username: ${DB_USERNAME:devuser}
     password: ${DB_PASSWORD:devpass}
   jpa:

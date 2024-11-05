@@ -81,10 +81,4 @@ public class SecurityConfig {
                 .build();
     }
 
-//    @Bean
-//    public UserDetailsService userDetailsService(UserRepository userRepository) {
-//        return userEmail -> userRepository.findUserByEmail(userEmail)
-//                .map(UserDetailsImpl::build)
-//                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + userEmail));
-//    }
 }

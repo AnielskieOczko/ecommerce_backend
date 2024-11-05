@@ -85,6 +85,6 @@ logging:
     root: ERROR
     org.springframework: WARN
 jwt:
-  secret: ${JWT_SECRET:default-dev-secret-key-base64-encoded}
+  secret: ${JWT_SECRET}
   expirationMs: 86400000  # 24 hours
   # openssl rand -base64 64

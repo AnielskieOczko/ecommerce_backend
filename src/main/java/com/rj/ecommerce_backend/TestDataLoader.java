@@ -9,12 +9,13 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
 
 import java.util.Set;
 
+@Component
 @Slf4j
 @AllArgsConstructor
-@Transactional
 public class TestDataLoader {
 
     private final UserService userServiceImpl;
@@ -32,6 +33,7 @@ public class TestDataLoader {
         loadUsers();
     }
 
+    @Transactional
     private void loadAuthorities() {
         Authority authority = new Authority();
         authority.setName(ROLE_USER);
@@ -43,6 +45,7 @@ public class TestDataLoader {
         authorityServiceImpl.addNewAuthority(authority1);
     }
 
+    @Transactional
     private void loadUsers() {
 
         User user = new User();
@@ -57,9 +60,14 @@ public class TestDataLoader {
         user2.setEmail("testUser2@gmail.com");
         user2.setPassword("password2");
 
-        Set<String> roles = Set.of(ROLE_ADMIN);
+        Set<String> authorities = Set.of(ROLE_ADMIN);
 
-        userServiceImpl.saveUser(user, roles);
+//        Authority adminAuthority = authorityServiceImpl.findAuthorityByRoleName("ROLE_ADMIN")
+//                .orElseThrow(() -> new RuntimeException("Authority not found"));
+//
+//        user.getAuthorities().add(adminAuthority);
+
+        userServiceImpl.saveUser(user, authorities);
 
     }
 

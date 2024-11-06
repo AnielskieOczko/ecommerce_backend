@@ -101,6 +101,10 @@ jobs:
       packages: read
       security-events: write
 
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: anielskieoczko/ecommerce_backend
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -112,15 +116,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Get the tag name directly from the GitHub ref
+      # Get the tag name directly from the GitHub ref (removing 'v' prefix if present)
       - name: Get the version
         id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          # Remove 'v' prefix if present
+          VERSION=${VERSION#v}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      # Set the full image reference with lowercase repository name
+      # Set the full image reference with correct casing and format
       - name: Set image reference
         run: |
-          echo "IMAGE_REF=${{ env.REGISTRY }}/anielskieoczko/ecommerce_backend:${{ env.VERSION }}" >> $GITHUB_ENV
+          echo "IMAGE_REF=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}" >> $GITHUB_ENV
 
       # Pull the image using the exact tag
       - name: Pull image to scan

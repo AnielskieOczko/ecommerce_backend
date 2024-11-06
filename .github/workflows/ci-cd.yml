@@ -112,34 +112,53 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Set up Docker metadata
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=semver,pattern={{version}}
+      # Get the tag name directly from the GitHub ref
+      - name: Get the version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
-      # Get the specific tag we want to scan
-      - name: Set image tag
-        id: image_tag
+      # Set the full image reference
+      - name: Set image reference
         run: |
-          TAG=$(echo ${{ steps.meta.outputs.tags }} | tr '\n' ' ' | awk '{print $1}')
-          echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
+          echo "IMAGE_REF=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}" >> $GITHUB_ENV
 
-      # Pull the image using the specific tag
+      # Pull the image using the exact tag
       - name: Pull image to scan
-        run: docker pull ${{ env.IMAGE_TAG }}
+        run: docker pull ${{ env.IMAGE_REF }}
 
-      # Run Trivy vulnerability scanner
+      # Cache Trivy vulnerability database
+      - name: Cache Trivy vulnerability database
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/trivy
+          key: trivy-cache-${{ runner.os }}-${{ hashFiles('**/Dockerfile*') }}
+          restore-keys: |
+            trivy-cache-${{ runner.os }}-
+
+      # Run Trivy vulnerability scanner with retry mechanism
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.IMAGE_TAG }}
+          image-ref: ${{ env.IMAGE_REF }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
+          timeout: '10m'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          cache-dir: '.trivycache/'
+          security-checks: 'vuln,config'
+          skip-files: ''
+          skip-dirs: ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TRIVY_NO_PROGRESS: "true"
+          TRIVY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Add rate limiting configuration
+          TRIVY_RATE_LIMIT: "40000"
+          TRIVY_RETRY_COUNT: "5"
+          TRIVY_TIMEOUT: "10m"
 
       # Upload Trivy scan results to GitHub Security tab
       - name: Upload Trivy scan results to GitHub Security tab
@@ -147,14 +166,29 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-      # Generate and save HTML report
+      # Generate and save HTML report with the same configurations
       - name: Run Trivy vulnerability scanner (HTML report)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.IMAGE_TAG }}
+          image-ref: ${{ env.IMAGE_REF }}
           format: 'table'
           output: 'trivy-results.txt'
           severity: 'CRITICAL,HIGH,MEDIUM'
+          timeout: '10m'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          cache-dir: '.trivycache/'
+          security-checks: 'vuln,config'
+          skip-files: ''
+          skip-dirs: ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TRIVY_NO_PROGRESS: "true"
+          TRIVY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TRIVY_RATE_LIMIT: "40000"
+          TRIVY_RETRY_COUNT: "5"
+          TRIVY_TIMEOUT: "10m"
 
       # Upload HTML report as artifact
       - name: Upload Trivy scan results

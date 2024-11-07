@@ -1,5 +1,9 @@
 package com.rj.ecommerce_backend.domain.user;
 
+import com.rj.ecommerce_backend.domain.user.valueobject.Address;
+import com.rj.ecommerce_backend.domain.user.valueobject.Email;
+import com.rj.ecommerce_backend.domain.user.valueobject.Password;
+import com.rj.ecommerce_backend.domain.user.valueobject.PhoneNumber;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
@@ -7,6 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,16 +24,28 @@ import java.util.Set;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
+    private String firstName;
+    private String lastName;
 
+    @Embedded
     @NotEmpty
-    @Column(unique = true)
-    private String email;
+    @AttributeOverride(name = "value", column = @Column(unique = true))
+    private Email email;
 
-    private String password;
+    @Embedded
+    private Password password;
+
+    @Embedded
+    private Address address;
+
+    @Embedded
+    private PhoneNumber phoneNumber;
+
+    @Column(name = "date_of_birth")
+    LocalDate dateOfBirth;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

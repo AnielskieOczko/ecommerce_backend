@@ -4,6 +4,12 @@ import com.rj.ecommerce_backend.domain.user.Authority;
 import com.rj.ecommerce_backend.domain.user.AuthorityServiceImpl;
 import com.rj.ecommerce_backend.domain.user.User;
 import com.rj.ecommerce_backend.domain.user.UserService;
+import com.rj.ecommerce_backend.domain.user.dtos.AddressDto;
+import com.rj.ecommerce_backend.domain.user.dtos.CreateUserRequest;
+import com.rj.ecommerce_backend.domain.user.dtos.PhoneNumberDto;
+import com.rj.ecommerce_backend.domain.user.valueobject.Address;
+import com.rj.ecommerce_backend.domain.user.valueobject.Email;
+import com.rj.ecommerce_backend.domain.user.valueobject.Password;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +17,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.Set;
 
 @Component
@@ -48,27 +55,27 @@ public class TestDataLoader {
     @Transactional
     private void loadUsers() {
 
-        User user = new User();
-        user.setEmail("root@gmail.com");
-        user.setPassword("root");
+        AddressDto addressDto = new AddressDto(
+                "new street",
+                "Wroclaw",
+                "55-200",
+                "Poland"
+        );
 
-        User user1 = new User();
-        user1.setEmail("testUser1@gmail.com");
-        user1.setPassword("password1");
+        PhoneNumberDto phoneNumberDto = new PhoneNumberDto("777-777-777");
 
-        User user2 = new User();
-        user2.setEmail("testUser2@gmail.com");
-        user2.setPassword("password2");
+        CreateUserRequest createUserRequest = new CreateUserRequest(
+                "firstName",
+                "lastName",
+                "root@gmail.com",
+                "root",
+                addressDto,
+                phoneNumberDto,
+                LocalDate.now(),
+                Set.of(ROLE_ADMIN)
+        );
 
-        Set<String> authorities = Set.of(ROLE_ADMIN);
-
-//        Authority adminAuthority = authorityServiceImpl.findAuthorityByRoleName("ROLE_ADMIN")
-//                .orElseThrow(() -> new RuntimeException("Authority not found"));
-//
-//        user.getAuthorities().add(adminAuthority);
-
-        userServiceImpl.saveUser(user, authorities);
+        userServiceImpl.createUser(createUserRequest);
 
     }
-
 }

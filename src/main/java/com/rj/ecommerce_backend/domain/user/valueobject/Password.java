@@ -1,9 +1,10 @@
 package com.rj.ecommerce_backend.domain.user.valueobject;
 
 import jakarta.persistence.Embeddable;
+import jakarta.validation.constraints.NotEmpty;
 
 @Embeddable
-public record Password(String value) {
+public record Password(@NotEmpty String value) {
     public static Password of(String password) {
         validatePassword(password);
         return new Password(password);

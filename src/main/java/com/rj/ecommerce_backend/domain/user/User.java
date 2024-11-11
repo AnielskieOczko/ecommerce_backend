@@ -31,17 +31,24 @@ public class User {
     private String lastName;
 
     @Embedded
-    @NotEmpty
-    @AttributeOverride(name = "value", column = @Column(unique = true))
+    @AttributeOverride(name = "value", column = @Column(name = "email", unique = true))
     private Email email;
 
     @Embedded
+    @AttributeOverride(name = "value", column = @Column(name = "password"))
     private Password password;
 
     @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "street", column = @Column(name = "address_street")),
+            @AttributeOverride(name = "city", column = @Column(name = "address_city")),
+            @AttributeOverride(name = "zipCode", column = @Column(name = "address_zip_code")),
+            @AttributeOverride(name = "country", column = @Column(name = "address_country"))
+    })
     private Address address;
 
     @Embedded
+    @AttributeOverride(name = "value", column = @Column(name = "phone_number"))
     private PhoneNumber phoneNumber;
 
     @Column(name = "date_of_birth")

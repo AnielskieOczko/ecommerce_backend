@@ -12,20 +12,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/test-user") // Added a more specific base path
+@RequestMapping("/test-user")
 public class TestUserController {
 
-    @GetMapping("/email") // Added a more specific endpoint
+    @GetMapping("/email")
     public ResponseEntity<Map<String, String>> getLoggedInUserEmail() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication != null && authentication.isAuthenticated()) {  // Check authentication
-            String email = authentication.getName();  // Get the username (which should be the email)
+        if (authentication != null && authentication.isAuthenticated()) {
+            String email = authentication.getName();
             Map<String, String> response = new HashMap<>();
             response.put("email", email);
-            return ResponseEntity.ok(response); // 200 OK
+            return ResponseEntity.ok(response);
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null); // Return appropriate error code
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.rj.ecommerce_backend.securityconfig;
+package com.rj.ecommerce_backend.securityconfig.exception;
 
 public class UserAuthenticationException extends RuntimeException {
     public UserAuthenticationException(String message) {

@@ -1,4 +1,4 @@
-package com.rj.ecommerce_backend.securityconfig;
+package com.rj.ecommerce_backend.securityconfig.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

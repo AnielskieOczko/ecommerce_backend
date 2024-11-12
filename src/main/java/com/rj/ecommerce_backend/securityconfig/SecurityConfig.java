@@ -26,6 +26,8 @@ public class SecurityConfig {
 
     private final AuthTokenFilter authTokenFilter;
 
+    private final LogoutService logoutService;
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfiguration) throws Exception {
         return authConfiguration.getAuthenticationManager();
@@ -77,7 +79,12 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 // Add JWT token filter
                 .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class)
-
+                .logout(logout ->
+                        logout.logoutUrl("/api/auth/logout")
+                                .addLogoutHandler(logoutService)
+                                .logoutSuccessHandler((request, response, authentication) ->
+                                        response.setStatus(HttpServletResponse.SC_OK))
+                )
                 .build();
     }
 

@@ -2,6 +2,9 @@ package com.rj.ecommerce_backend.securityconfig;
 
 import com.rj.ecommerce_backend.domain.user.UserDetailsImpl;
 import com.rj.ecommerce_backend.domain.user.UserRepository;
+import com.rj.ecommerce_backend.securityconfig.dto.JwtResponse;
+import com.rj.ecommerce_backend.securityconfig.dto.LoginRequest;
+import com.rj.ecommerce_backend.securityconfig.exception.UserAuthenticationException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +40,9 @@ public class AuthServiceImpl implements AuthService{
         try {
             // Authenticate the user
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getEmail(),
+                            loginRequest.getPassword())
             );
 
             // Set the authentication in security context

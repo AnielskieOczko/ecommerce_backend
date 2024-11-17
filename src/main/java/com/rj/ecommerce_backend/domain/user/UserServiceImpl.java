@@ -2,11 +2,20 @@ package com.rj.ecommerce_backend.domain.user;
 
 import com.rj.ecommerce_backend.domain.user.dtos.*;
 import com.rj.ecommerce_backend.domain.user.valueobject.*;
+import com.rj.ecommerce_backend.securityconfig.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -16,20 +25,33 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
 @Transactional
 @Slf4j
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl extends SecuredBaseService implements UserService {
 
     private final UserRepository userRepository;
     private final AuthorityRepository authorityRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LogoutService logoutService;
+    private final JwtUtils jwtUtils;
+    private final AuthenticationManager authenticationManager;
 
-
-    @Override
-    public List<User> findAllUsers() {
-        return userRepository.findAll();
+    public UserServiceImpl(SecurityContextImpl securityContext,
+                           UserRepository userRepository,
+                           AuthorityRepository authorityRepository,
+                           PasswordEncoder passwordEncoder,
+                           LogoutService logoutService,
+                           JwtUtils jwtUtils,
+                           AuthenticationManager authenticationManager) {
+        super(securityContext);
+        this.userRepository = userRepository;
+        this.authorityRepository = authorityRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.logoutService = logoutService;
+        this.jwtUtils = jwtUtils;
+        this.authenticationManager = authenticationManager;
     }
+
 
     @Override
     public Optional<User> findUserByName(String firstname) {
@@ -86,44 +108,74 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponseDto updateUser(Long userId, UpdateUserRequest updateUserRequest) {
+    public UserResponseDto updateUser(Long userId, UpdateUserRequest updateUserRequest,
+                                      HttpServletRequest request,
+                                      HttpServletResponse response) {
+
+        // 1. Security Check
+        checkAccess(userId);
+
+        // 2. Find User
         User user = userRepository.findUserById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        user.setFirstName(updateUserRequest.firstName());
-        user.setLastName(updateUserRequest.lastName());
-        user.setAddress(new Address(
-                updateUserRequest.address().street(),
-                updateUserRequest.address().city(),
-                new ZipCode(updateUserRequest.address().zipCode()),
-                updateUserRequest.address().country()
-        ));
-        user.setPhoneNumber(new PhoneNumber(updateUserRequest.phoneNumber().value()));
-        user.setActive(true);
-        user.setDateOfBirth(updateUserRequest.dateOfBirth());
+        // 3. Store old email for comparison
+        String oldEmail = user.getEmail().value();
 
-        if (!updateUserRequest.email().isEmpty()) {
+        // 4. Update basic information
+        updateBasicInformation(user, updateUserRequest);
+
+        // 5. Handle email update
+        boolean emailChanged = false;
+        if (!updateUserRequest.email().isEmpty() && !oldEmail.equals(updateUserRequest.email())) {
+            validateNewEmail(updateUserRequest.email());
             user.setEmail(Email.of(updateUserRequest.email()));
+            emailChanged = true;
         }
 
-        // 4. Hash the Password
+        // 6. Handle password update
         if (!updateUserRequest.password().isEmpty()) {
             String encodedPassword = passwordEncoder.encode(updateUserRequest.password());
             user.setPassword(new Password(encodedPassword));
         }
 
-        userRepository.save(user);
+        // 7. Save user
+        User savedUser = userRepository.save(user);
 
-        return mapToUserResponseDto(user);
+        // 8. Handle security context update if email changed
+        if (emailChanged) {
+            handleEmailUpdate(request, response, savedUser, updateUserRequest.password());
+        }
+
+        return mapToUserResponseDto(savedUser);
+
     }
 
     @Override
     public void deleteUser(Long userId) {
+
+        // securityCheck
+        checkAccess(userId);
+
         User user = userRepository.findUserById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         log.info("Deleting user with ID: {}", userId);
         userRepository.delete(user);
+    }
+
+    private void updateBasicInformation(User user, UpdateUserRequest request) {
+        user.setFirstName(request.firstName());
+        user.setLastName(request.lastName());
+        user.setAddress(new Address(
+                request.address().street(),
+                request.address().city(),
+                new ZipCode(request.address().zipCode()),
+                request.address().country()
+        ));
+        user.setPhoneNumber(new PhoneNumber(request.phoneNumber().value()));
+        user.setActive(true);
+        user.setDateOfBirth(request.dateOfBirth());
     }
 
     private UserResponseDto mapToUserResponseDto(User user) {
@@ -141,6 +193,7 @@ public class UserServiceImpl implements UserService {
         );
     }
 
+
     private AddressDto mapToAddressDto(Address address) {
         return new AddressDto(
                 address.street(),
@@ -154,6 +207,40 @@ public class UserServiceImpl implements UserService {
         return new PhoneNumberDto(
                 phoneNumber
         );
+    }
+
+    private void validateNewEmail(String newEmail) {
+        if (userRepository.existsByEmail(Email.of(newEmail))) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already exists");
+        }
+    }
+
+    private void handleEmailUpdate(HttpServletRequest request,
+                                   HttpServletResponse response,
+                                   User user,
+                                   String password) {
+        // 1. Logout the user from the current session
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            logoutService.logout(request, response, auth);
+        }
+
+        // 2. If password was not changed, we need to get it from the user object
+        String credentials = !password.isEmpty() ? password : user.getPassword().value();
+
+        // 3. Create new authentication token with updated email
+        Authentication newAuth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(user.getEmail().value(), credentials)
+        );
+
+        // 4. Update security context
+        SecurityContextHolder.getContext().setAuthentication(newAuth);
+
+        // 5. Generate new JWT token
+        String newToken = jwtUtils.generateJwtToken(newAuth);
+
+        // 6. Add new token to response header
+        response.setHeader("Authorization", "Bearer " + newToken);
     }
 
 }

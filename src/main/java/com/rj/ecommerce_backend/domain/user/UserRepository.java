@@ -32,5 +32,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u JOIN u.authorities a WHERE a.name = :roleName ORDER BY u.email ASC")
     Page<User> findByRoleName(@Param("roleName") String roleName, Pageable pageable);
 
-
+    @Transactional
+    boolean existsByEmail(Email email);
 }

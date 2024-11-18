@@ -20,6 +20,8 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtUtils {
 
+    private final Long jwtExpirationTime = 900000L;
+
     private final JwtConfig jwtConfig;
 
     private String getJwtSecret() {
@@ -44,7 +46,7 @@ public class JwtUtils {
                 .setSubject(String.valueOf(userPrincipal.getId())) // User ID as subject
                 .claim("username", userPrincipal.getUsername()) // Username as a separate claim
                 .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + 86400000)) // TODO: change hardcoded value to env variable (getJwtExpiationMs does return 0 - issue to fix)
+                .setExpiration(new Date((new Date()).getTime() + jwtExpirationTime)) // TODO: change hardcoded value to env variable (getJwtExpiationMs does return 0 - issue to fix)
                 .signWith(key(), SignatureAlgorithm.HS512)
                 .compact();
     }

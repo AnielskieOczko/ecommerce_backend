@@ -1,9 +1,6 @@
 package com.rj.ecommerce_backend.securityconfig;
 
-import com.rj.ecommerce_backend.securityconfig.dto.AuthResponse;
-import com.rj.ecommerce_backend.securityconfig.dto.JwtResponse;
-import com.rj.ecommerce_backend.securityconfig.dto.LoginRequest;
-import com.rj.ecommerce_backend.securityconfig.dto.TokenInfo;
+import com.rj.ecommerce_backend.securityconfig.dto.*;
 import com.rj.ecommerce_backend.securityconfig.exception.UserAuthenticationException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -56,11 +53,9 @@ public class AuthController {
         return ResponseEntity.ok(jwtBlackListedService.getUserTokens(userId));
     }
 
-//    @PostMapping("/logout")
-//    public ResponseEntity<?> logout(HttpServletRequest request) {
-//        // The actual logout handling is done by Spring Security
-//        // This endpoint is just for documentation/clarity
-//        return ResponseEntity.ok()
-//                .body("Logged out successfully");
-//    }
+    @PostMapping("/refresh-token")
+    public ResponseEntity<JwtResponse> refreshToken(@RequestBody TokenRefreshRequest request) {
+        return ResponseEntity.ok(authService.refreshToken(request));
+    }
+
 }

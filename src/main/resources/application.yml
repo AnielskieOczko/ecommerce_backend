@@ -12,6 +12,7 @@ spring:
         format_sql: true
 server:
   port: 8080
+
 ---
 # Development profile (for local container development)
 spring:
@@ -26,13 +27,19 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
-
-logging:
-  level:
-    root: INFO
-    org.springframework: INFO
-    com.rj.ecommerce_backend: DEBUG
-    org.hibernate.SQL: DEBUG
+  logging:
+    level:
+      root: INFO
+      org.springframework: INFO
+      com.rj.ecommerce_backend: DEBUG
+      org.hibernate.SQL: DEBUG
+  jwt:
+    secret: ${JWT_SECRET}
+    expirationMs: 900000  # 15 minutes
+    refresh-token-expiration: 86400000  # 24 hours
+  cleanup:
+    cron: "0 0 * * * *"  # Run cleanup every hour
+    batch-size: 1000
 
 ---
 # Local profile (for running application locally without containers)
@@ -48,7 +55,6 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
-
 
 ---
 # CI profile (for GitHub Actions)
@@ -79,15 +85,14 @@ spring:
     hibernate:
       ddl-auto: none
     show-sql: false
-
-logging:
-  level:
-    root: ERROR
-    org.springframework: WARN
-jwt:
-  secret: ${JWT_SECRET}
-  expirationMs: 86400000  # 24 hours
-  # openssl rand -base64 64
+  logging:
+    level:
+      root: ERROR
+      org.springframework: WARN
+  jwt:
+    secret: ${JWT_SECRET}
+    expirationMs: 900000  # 15 minutes
+    refresh-token-expiration: 86400000  # 24 hours
   cleanup:
     cron: "0 0 * * * *"  # Run cleanup every hour
     batch-size: 1000

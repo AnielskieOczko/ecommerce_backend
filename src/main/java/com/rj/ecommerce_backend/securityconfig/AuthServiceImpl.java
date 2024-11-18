@@ -1,38 +1,40 @@
 package com.rj.ecommerce_backend.securityconfig;
 
+import com.rj.ecommerce_backend.domain.user.User;
 import com.rj.ecommerce_backend.domain.user.UserDetailsImpl;
 import com.rj.ecommerce_backend.domain.user.UserRepository;
 import com.rj.ecommerce_backend.securityconfig.dto.JwtResponse;
 import com.rj.ecommerce_backend.securityconfig.dto.LoginRequest;
+import com.rj.ecommerce_backend.securityconfig.dto.TokenRefreshRequest;
 import com.rj.ecommerce_backend.securityconfig.exception.UserAuthenticationException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 
 @RequiredArgsConstructor
 @Service
 @Transactional
 @Slf4j
-public class AuthServiceImpl implements AuthService{
+public class AuthServiceImpl implements AuthService {
+
+//    @Value("${spring.config.jwt.refresh-token-rotation}")
+    private final boolean shouldRotateRefreshToken = true;
 
     private final AuthenticationManager authenticationManager;
-
-    private final UserRepository userRepository;
-
     private final JwtUtils jwtUtils;
-
-
+    private final RefreshTokenService refreshTokenService;
+    private final RefreshTokenRepository refreshTokenRepository;
 
 
     @Override
@@ -48,18 +50,20 @@ public class AuthServiceImpl implements AuthService{
             // Set the authentication in security context
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // Generate JWT token
-            String jwt = jwtUtils.generateJwtToken(authentication);
-
             // Get user details
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             List<String> roles = userDetails.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .toList();
 
+            // Generate JWT token
+            String jwt = jwtUtils.generateJwtToken(authentication);
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getId());
+
             // Create and return the response
             return new JwtResponse(
                     jwt,
+                    refreshToken.getToken(),
                     userDetails.getId(),
                     userDetails.getUsername(),
                     roles
@@ -74,37 +78,28 @@ public class AuthServiceImpl implements AuthService{
     }
 
     @Override
-    public JwtResponse refreshToken(String refreshToken) {
-        // Implementation for refresh token logic
-        // This is optional but recommended for better security
-        try {
-            if (!jwtUtils.validateJwtToken(refreshToken)) {
-                throw new UserAuthenticationException("Invalid refresh token");
-            }
+    public JwtResponse refreshToken(TokenRefreshRequest request) {
+        RefreshToken refreshToken = refreshTokenService.verifyRefreshToken(request.getRefreshToken());
+        User user = refreshToken.getUser();
 
-            String userEmail = jwtUtils.getUsernameFromJwtToken(refreshToken);
-            UserDetails userDetails = userRepository.findUserByEmail(userEmail)
-                    .map(UserDetailsImpl::build)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        // Generate new tokens
+        UserDetailsImpl userDetails = UserDetailsImpl.build(user);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+        String accessToken = jwtUtils.generateJwtToken(authentication);
+        RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user.getId());
 
-            String newToken = jwtUtils.generateJwtToken(authentication);
-
-            return new JwtResponse(
-                    newToken,
-                    ((UserDetailsImpl) userDetails).getId(),
-                    userDetails.getUsername(),
-                    userDetails.getAuthorities().stream()
-                            .map(GrantedAuthority::getAuthority)
-                            .toList()
-            );
-        } catch (Exception e) {
-            log.error("Failed to refresh token", e);
-            throw new UserAuthenticationException("Failed to refresh token");
-        }
+        return new JwtResponse(
+                accessToken,
+                newRefreshToken.getToken(),
+                user.getId(),
+                user.getEmail().value(),
+                userDetails.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .toList()
+        );
     }
+
 
 }

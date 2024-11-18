@@ -28,9 +28,6 @@ import java.util.List;
 @Slf4j
 public class AuthServiceImpl implements AuthService {
 
-//    @Value("${spring.config.jwt.refresh-token-rotation}")
-    private final boolean shouldRotateRefreshToken = true;
-
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
     private final RefreshTokenService refreshTokenService;

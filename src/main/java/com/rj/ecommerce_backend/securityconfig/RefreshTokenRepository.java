@@ -22,9 +22,4 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     @Query("SELECT rt FROM RefreshToken rt JOIN FETCH rt.user WHERE rt.token = :token")
     Optional<RefreshToken> findByTokenWithUser(@Param("token") String token);
 
-    @Query("SELECT rt FROM RefreshToken rt WHERE rt.user.id = :userId " +
-            "AND rt.revokedAt IS NULL AND rt.expiryDate > CURRENT_TIMESTAMP")
-    List<RefreshToken> findActiveTokensByUser(@Param("userId") Long userId);
-
-    boolean existsByUserAndRevokedAtIsNull(User user);
 }

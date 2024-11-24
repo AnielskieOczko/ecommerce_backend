@@ -1,6 +1,6 @@
 package com.rj.ecommerce_backend.securityconfig;
 
-import com.rj.ecommerce_backend.domain.user.UserDetailsServiceImpl;
+import com.rj.ecommerce_backend.domain.user.services.UserDetailsServiceImpl;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

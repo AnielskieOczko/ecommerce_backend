@@ -1,16 +1,14 @@
-package com.rj.ecommerce_backend.domain.user;
+package com.rj.ecommerce_backend.domain.user.controllers;
 
 import com.rj.ecommerce_backend.domain.user.dtos.CreateUserRequest;
 import com.rj.ecommerce_backend.domain.user.dtos.UpdateUserRequest;
 import com.rj.ecommerce_backend.domain.user.dtos.UserResponseDto;
+import com.rj.ecommerce_backend.domain.user.services.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.annotations.Parameter;
-import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,9 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1/users")

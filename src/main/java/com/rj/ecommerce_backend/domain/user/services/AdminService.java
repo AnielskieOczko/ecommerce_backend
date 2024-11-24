@@ -1,5 +1,6 @@
-package com.rj.ecommerce_backend.domain.user;
+package com.rj.ecommerce_backend.domain.user.services;
 
+import com.rj.ecommerce_backend.domain.user.User;
 import com.rj.ecommerce_backend.domain.user.dtos.CreateUserRequest;
 import com.rj.ecommerce_backend.domain.user.dtos.UpdateUserRequest;
 import com.rj.ecommerce_backend.domain.user.dtos.UserResponseDto;

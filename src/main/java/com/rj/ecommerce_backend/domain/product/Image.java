@@ -1,9 +1,6 @@
-package com.rj.ecommerce_backend.domain.product.valueobject;
+package com.rj.ecommerce_backend.domain.product;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
@@ -17,4 +14,9 @@ public class Image {
     private String path;
     private String altText;
     private String mimeType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id")
+    private Product product;
+
 }

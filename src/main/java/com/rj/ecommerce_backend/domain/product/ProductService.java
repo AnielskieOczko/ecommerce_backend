@@ -1,20 +1,29 @@
 package com.rj.ecommerce_backend.domain.product;
 
+import com.rj.ecommerce_backend.domain.product.dtos.ProductCreateDTO;
+import com.rj.ecommerce_backend.domain.product.dtos.ProductResponseDTO;
+import com.rj.ecommerce_backend.domain.product.dtos.ProductUpdateDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+
 import java.util.List;
 import java.util.Optional;
 
 public interface ProductService {
 
-    Product createProduct(Product product);
+    ProductResponseDTO createProduct(ProductCreateDTO productDTO);
 
-    Optional<Product> getProductById(Long id);
+    Optional<ProductResponseDTO> getProductById(Long id);
 
-    List<Product> getAllProducts();
+    Page<ProductResponseDTO> getAllProducts(Pageable pageable);
 
-    Product updateProduct(Long id, Product updatedProduct);
+    ProductResponseDTO updateProduct(Long id, ProductUpdateDTO productDTO);
 
     void deleteProduct(Long id);
 
-    List<Product> searchProducts(String keyword); //Example search method
+    Page<ProductResponseDTO> findProductsByCategory(Long categoryId, Pageable pageable);
+
+    Page<ProductResponseDTO> searchProductsByName(String productName, Pageable pageable); //Example search method
 }
 

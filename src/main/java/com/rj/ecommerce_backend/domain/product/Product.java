@@ -13,6 +13,7 @@ import java.util.List;
 @Getter
 @Setter
 @EqualsAndHashCode
+@Builder
 public class Product {
 
     @Id
@@ -20,15 +21,19 @@ public class Product {
     Long id;
 
     @Embedded
+    @AttributeOverride(name = "value", column = @Column(name = "name"))
     ProductName productName;
 
     @Embedded
+    @AttributeOverride(name = "value", column = @Column(name = "description"))
     ProductDescription productDescription;
 
     @Embedded
+    @AttributeOverride(name = "value", column = @Column(name = "price"))
     ProductPrice productPrice;
 
     @Embedded
+    @AttributeOverride(name = "value", column = @Column(name = "quantity"))
     StockQuantity stockQuantity;
 
     @ManyToMany
@@ -40,5 +45,5 @@ public class Product {
     List<Category> categories = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<Image> imageList;
+    List<Image> imageList = new ArrayList<>();
 }

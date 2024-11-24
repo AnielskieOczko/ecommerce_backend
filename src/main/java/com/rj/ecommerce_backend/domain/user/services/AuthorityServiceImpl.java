@@ -1,5 +1,7 @@
-package com.rj.ecommerce_backend.domain.user;
+package com.rj.ecommerce_backend.domain.user.services;
 
+import com.rj.ecommerce_backend.domain.user.Authority;
+import com.rj.ecommerce_backend.domain.user.repositories.AuthorityRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 

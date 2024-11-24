@@ -1,5 +1,6 @@
-package com.rj.ecommerce_backend.domain.user;
+package com.rj.ecommerce_backend.domain.user.services;
 
+import com.rj.ecommerce_backend.domain.user.User;
 import com.rj.ecommerce_backend.domain.user.dtos.CreateUserRequest;
 import com.rj.ecommerce_backend.domain.user.dtos.UpdateUserRequest;
 import com.rj.ecommerce_backend.domain.user.dtos.UserResponseDto;
@@ -7,7 +8,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service

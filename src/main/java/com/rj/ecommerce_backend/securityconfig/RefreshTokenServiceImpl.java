@@ -1,19 +1,15 @@
 package com.rj.ecommerce_backend.securityconfig;
 
 import com.rj.ecommerce_backend.domain.user.User;
-import com.rj.ecommerce_backend.domain.user.UserRepository;
-import com.rj.ecommerce_backend.domain.user.UserService;
+import com.rj.ecommerce_backend.domain.user.repositories.UserRepository;
 import com.rj.ecommerce_backend.securityconfig.exception.TokenRefreshException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 @Service

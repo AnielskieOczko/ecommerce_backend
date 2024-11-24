@@ -1,5 +1,7 @@
-package com.rj.ecommerce_backend.domain.user;
+package com.rj.ecommerce_backend.domain.user.services;
 
+import com.rj.ecommerce_backend.domain.user.UserDetailsImpl;
+import com.rj.ecommerce_backend.domain.user.repositories.UserRepository;
 import com.rj.ecommerce_backend.domain.user.valueobject.Email;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

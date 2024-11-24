@@ -1,15 +1,11 @@
 package com.rj.ecommerce_backend;
 
 import com.rj.ecommerce_backend.domain.user.Authority;
-import com.rj.ecommerce_backend.domain.user.AuthorityServiceImpl;
-import com.rj.ecommerce_backend.domain.user.User;
-import com.rj.ecommerce_backend.domain.user.UserService;
+import com.rj.ecommerce_backend.domain.user.services.AuthorityServiceImpl;
+import com.rj.ecommerce_backend.domain.user.services.UserService;
 import com.rj.ecommerce_backend.domain.user.dtos.AddressDto;
 import com.rj.ecommerce_backend.domain.user.dtos.CreateUserRequest;
 import com.rj.ecommerce_backend.domain.user.dtos.PhoneNumberDto;
-import com.rj.ecommerce_backend.domain.user.valueobject.Address;
-import com.rj.ecommerce_backend.domain.user.valueobject.Email;
-import com.rj.ecommerce_backend.domain.user.valueobject.Password;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

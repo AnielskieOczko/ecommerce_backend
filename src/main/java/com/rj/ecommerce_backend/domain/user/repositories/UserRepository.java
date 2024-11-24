@@ -1,5 +1,6 @@
-package com.rj.ecommerce_backend.domain.user;
+package com.rj.ecommerce_backend.domain.user.repositories;
 
+import com.rj.ecommerce_backend.domain.user.User;
 import com.rj.ecommerce_backend.domain.user.valueobject.Email;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;

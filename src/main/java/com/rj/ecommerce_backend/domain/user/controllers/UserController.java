@@ -1,4 +1,4 @@
-package com.rj.ecommerce_backend.domain.user;
+package com.rj.ecommerce_backend.domain.user.controllers;
 
 import com.rj.ecommerce_backend.domain.user.dtos.CreateUserRequest;
 import com.rj.ecommerce_backend.domain.user.dtos.UpdateUserRequest;
@@ -6,8 +6,6 @@ import com.rj.ecommerce_backend.domain.user.dtos.UserResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
-
-import java.util.List;
 
 public interface UserController {
 

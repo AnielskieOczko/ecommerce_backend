@@ -13,12 +13,10 @@ import org.springframework.stereotype.Service;
 public class CartServiceImpl implements CartService {
 
     private final CartRepository cartRepository;
-    private final CartMapper cartMapper;
 
     @Override
     public CartDTO getCartForUser(Long userId) {
-        return cartMapper.toDto(cartRepository.findById(userId)
-                .orElseThrow(() -> new CartNotFoundException(Long.toString(userId))));
+        return null;
     }
 
     @Override

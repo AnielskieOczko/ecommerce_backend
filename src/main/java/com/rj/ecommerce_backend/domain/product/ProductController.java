@@ -22,7 +22,7 @@ import java.net.URI;
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
 @Slf4j
-public class ProductControllerImpl {
+public class ProductController {
 
     private final ProductService productService;
 

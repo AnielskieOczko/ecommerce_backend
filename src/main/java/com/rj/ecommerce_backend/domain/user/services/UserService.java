@@ -17,6 +17,7 @@ public interface UserService {
     Optional<User> findUserByEmail(String email);
 
     UserResponseDto getUser(Long userId);
+    Optional<User> getUserForValidation(Long userId);
     UserResponseDto createUser(CreateUserRequest createUserRequest);
     UserResponseDto updateUser(Long userId, UpdateUserRequest updateUserRequest,
                                HttpServletRequest request,

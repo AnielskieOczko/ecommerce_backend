@@ -16,9 +16,13 @@ public interface ProductService {
 
     Optional<ProductResponseDTO> getProductById(Long id);
 
+    Optional<Product> getProductEntityForValidation(Long productId);
+
     Page<ProductResponseDTO> getAllProducts(Pageable pageable);
 
     ProductResponseDTO updateProduct(Long id, ProductUpdateDTO productDTO);
+
+    void reduceProductQuantity(Long productId, int newQuantity);
 
     void deleteProduct(Long id);
 

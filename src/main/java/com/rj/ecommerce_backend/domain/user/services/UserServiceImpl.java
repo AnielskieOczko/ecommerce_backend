@@ -71,6 +71,12 @@ public class UserServiceImpl extends SecuredBaseService implements UserService {
     }
 
     @Override
+    public Optional<User> getUserForValidation(Long userId) {
+        return Optional.ofNullable(userRepository.findUserById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")));
+    }
+
+    @Override
     public UserResponseDto createUser(CreateUserRequest createUserRequest) {
 
         Set<String> authorityNames = createUserRequest.authorities();

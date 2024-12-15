@@ -1,6 +1,7 @@
 package com.rj.ecommerce_backend.domain.product;
 
 import com.rj.ecommerce_backend.domain.product.dtos.*;
+import com.rj.ecommerce_backend.domain.product.exceptions.InsufficientStockException;
 import com.rj.ecommerce_backend.domain.product.exceptions.ProductNotFoundException;
 import com.rj.ecommerce_backend.domain.product.valueobject.*;
 import jakarta.transaction.Transactional;
@@ -21,24 +22,30 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ImageRepository imageRepository;
+    private final ProductMapper productMapper;
 
     @Override
     public ProductResponseDTO createProduct(ProductCreateDTO productDTO) {
-        Product product = mapToEntity(productDTO);
+        Product product = productMapper.mapToEntity(productDTO);
         Product savedProduct = productRepository.save(product);
-        return mapToDTO(savedProduct);
+        return productMapper.mapToDTO(savedProduct);
     }
 
     @Override
     public Optional<ProductResponseDTO> getProductById(Long id) {
-        return productRepository.findById(id).map(this::mapToDTO);
+        return productRepository.findById(id).map(productMapper::mapToDTO);
+    }
+
+    @Override
+    public Optional<Product> getProductEntityForValidation(Long productId) {
+        return productRepository.findById(productId);
     }
 
     @Override
     public Page<ProductResponseDTO> getAllProducts(Pageable pageable) {
         Page<Product> products = productRepository.findAll(pageable); // Use findAll(Pageable)
 
-        return products.map(this::mapToDTO);
+        return products.map(productMapper::mapToDTO);
     }
 
     @Override
@@ -72,18 +79,34 @@ public class ProductServiceImpl implements ProductService {
         }
 
 
+
+
         // TODO: handle images -> check it later if it can be done in different way
         if (productDTO.imageList() != null && !productDTO.imageList().isEmpty()) {
             // Clear existing and save/set new images (as in the previous example).
             product.getImageList().clear(); // Clear existing images
             List<Image> newImages = productDTO.imageList().stream()
-                    .map(this::mapToImageEntity).toList();
+                    .map(productMapper::mapToImageEntity).toList();
             imageRepository.saveAll(newImages); // Save new images
             product.getImageList().addAll(newImages);
         }
 
 
-        return mapToDTO(productRepository.save(product));
+        return productMapper.mapToDTO(productRepository.save(product));
+    }
+
+    @Override
+    public void reduceProductQuantity(Long productId, int quantityToReduce) {
+
+        Product product = getProductEntityForValidation(productId)
+                .orElseThrow(() -> new ProductNotFoundException(productId));
+
+        int currentStock = product.getStockQuantity().value();
+        if (currentStock < quantityToReduce) {
+            throw new InsufficientStockException("Cannot reduce stock below zero");
+        }
+
+        productRepository.updateProductQuantity(productId, new StockQuantity(currentStock - quantityToReduce));
     }
 
 
@@ -98,69 +121,13 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Page<ProductResponseDTO> findProductsByCategory(Long categoryId, Pageable pageable) {
         Page<Product> products = productRepository.findByCategories_Id(categoryId, pageable);
-        return products.map(this::mapToDTO);
+        return products.map(productMapper::mapToDTO);
     }
 
     @Override
     public Page<ProductResponseDTO> searchProductsByName(String productName, Pageable pageable) {
         Page<Product> products = productRepository.findByProductNameValueContainingIgnoreCase(productName, pageable);
-        return products.map(this::mapToDTO);
-    }
-
-    // Helper methods for DTO-Entity conversion
-    private Product mapToEntity(ProductCreateDTO dto) {
-
-        List<Category> categories = (dto.categoryIds() != null && !dto.categoryIds().isEmpty())
-                ? categoryRepository.findAllById(dto.categoryIds())
-                : new ArrayList<>();
-
-
-        List<Image> imageList = (dto.imageList() != null && !dto.imageList().isEmpty())
-                ? dto.imageList().stream().map(this::mapToImageEntity).toList()
-                : new ArrayList<>();
-
-        return Product.builder()
-                .productName(new ProductName(dto.name()))
-                .productDescription(new ProductDescription(dto.description()))
-                .productPrice(new ProductPrice(new Amount(dto.price()), new CurrencyCode(dto.currencyCode())))
-                .stockQuantity(new StockQuantity(dto.quantity()))
-                .categories(categories) // Set categories directly (fetched above)
-                .imageList(imageList) // set images, note these are DTOs, not entities yet.
-                .build();
-    }
-
-    private Image mapToImageEntity(ImageDTO imageDTO){
-        Image image = new Image();
-        image.setPath(imageDTO.path());
-        image.setAltText(imageDTO.altText());
-        image.setMimeType(imageDTO.mimeType());
-
-        return  image;
-    }
-
-
-    private ProductResponseDTO mapToDTO(Product entity) {
-
-        return new ProductResponseDTO(
-                entity.getId(),
-                entity.getProductName().value(),
-                entity.getProductDescription().value(),
-                entity.productPrice.amount().value(),
-                entity.getStockQuantity().value(),
-                entity.getCategories().stream().map(this::mapToCategoryDTO).toList(),  // Map categories
-                entity.getImageList().stream().map(this::mapToImageDTO).toList()  // Map imageList
-        );
-
-    }
-
-    private ImageDTO mapToImageDTO(Image image){
-        return new ImageDTO(image.getId(), image.getPath(), image.getAltText(), image.getMimeType());
-    }
-
-
-
-    private CategoryResponseDTO mapToCategoryDTO(Category category) {
-        return new CategoryResponseDTO(category.getId(), category.getName());
+        return products.map(productMapper::mapToDTO);
     }
 
 

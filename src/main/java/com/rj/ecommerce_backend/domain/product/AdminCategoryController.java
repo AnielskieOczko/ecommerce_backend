@@ -18,13 +18,12 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 @RestController
-@RequestMapping("api/categories")
+@RequestMapping("api/v1/admin/categories")
 @RequiredArgsConstructor
 @Slf4j
-public class CategoryController {
+public class AdminCategoryController {
 
     private final CategoryService categoryService;
 

@@ -19,14 +19,14 @@ import java.net.URI;
 
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("/api/v1/admin/products")
 @RequiredArgsConstructor
 @Slf4j
-public class ProductController {
+public class AdminProductController {
 
     private final ProductService productService;
 
-    @PostMapping
+    @PostMapping()
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ProductResponseDTO> createProduct(@RequestBody @Valid ProductCreateDTO productDTO) {
         ProductResponseDTO createdProduct = productService.createProduct(productDTO);

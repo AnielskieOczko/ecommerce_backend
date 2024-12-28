@@ -1,5 +1,8 @@
 package com.rj.ecommerce_backend.securityconfig;
 
+import com.rj.ecommerce_backend.domain.user.dtos.CreateUserRequest;
+import com.rj.ecommerce_backend.domain.user.dtos.UserResponseDto;
+import com.rj.ecommerce_backend.domain.user.services.UserService;
 import com.rj.ecommerce_backend.securityconfig.dto.*;
 import com.rj.ecommerce_backend.securityconfig.exception.UserAuthenticationException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +25,13 @@ public class AuthController {
     private final AuthService authService;
     private final LogoutService logoutService;
     private final JwtBlacklistService jwtBlackListedService;
+    private final UserService userService;
+
+    @PostMapping("/register")
+    public ResponseEntity<UserResponseDto> registerUser(@Valid @RequestBody CreateUserRequest createUserRequest) {
+        log.info("Creating user {}", createUserRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(createUserRequest));
+    }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {

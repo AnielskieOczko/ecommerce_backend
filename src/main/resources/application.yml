@@ -2,6 +2,11 @@ spring:
   application:
     name: ecommerce_backend
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
   # Default profile configuration
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -10,6 +15,13 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
+
+storage:
+  location: ${STORAGE_LOCATION}
+  base-url: ${STORAGE_BASE_URL}
+  cleanup-schedule: ${STORAGE_CLEANUP_SCHEDULE}
+  secret-salt: ${STORAGE_SECRET_SALT}
+
 server:
   port: 8080
 
@@ -41,6 +53,11 @@ spring:
     cron: "0 0 * * * *"  # Run cleanup every hour
     batch-size: 1000
 
+storage:
+  location: ${DEV_STORAGE_PATH:/tmp/ecommerce/product-images}
+  cleanup-schedule: "0 0 * * * *"  # Cleanup unused images hourly
+  temp-dir: ${java.io.tmpdir}/ecommerce-uploads
+
 ---
 # Local profile (for running application locally without containers)
 spring:
@@ -55,6 +72,9 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
+storage:
+  location: ${user.home}/ecommerce/product-images/local
+  cleanup-schedule: "0 0 * * * *"
 
 ---
 # CI profile (for GitHub Actions)
@@ -70,6 +90,9 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
+storage:
+  location: ${CI_STORAGE_PATH:/tmp/ecommerce/test-images}
+  cleanup-enabled: false  # Disable cleanup for testing
 
 ---
 # Production profile
@@ -96,3 +119,9 @@ spring:
   cleanup:
     cron: "0 0 * * * *"  # Run cleanup every hour
     batch-size: 1000
+
+storage:
+  location: ${PROD_STORAGE_PATH}
+  base-url: ${CDN_BASE_URL:/images}  # Optional CDN configuration
+  cleanup-schedule: "0 0 0 * * *"  # Daily cleanup at midnight
+  cleanup-threshold-days: 7  # Remove unused images after 7 days

@@ -44,6 +44,10 @@ public class Product {
     )
     List<Category> categories = new ArrayList<>();
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(
+            mappedBy = "product",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH},
+            orphanRemoval = true
+    )
     List<Image> imageList = new ArrayList<>();
 }

@@ -1,14 +1,20 @@
 package com.rj.ecommerce_backend.domain.product;
 
 import com.rj.ecommerce_backend.domain.product.dtos.*;
+import com.rj.ecommerce_backend.domain.product.exceptions.FileStorageException;
+import com.rj.ecommerce_backend.domain.product.exceptions.ImageNotFoundException;
 import com.rj.ecommerce_backend.domain.product.exceptions.InsufficientStockException;
 import com.rj.ecommerce_backend.domain.product.exceptions.ProductNotFoundException;
 import com.rj.ecommerce_backend.domain.product.valueobject.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,17 +23,30 @@ import java.util.Optional;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ImageRepository imageRepository;
+    private final FileStorageService fileStorageService;
     private final ProductMapper productMapper;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
-    public ProductResponseDTO createProduct(ProductCreateDTO productDTO) {
+    public ProductResponseDTO createProduct(ProductCreateDTO productDTO, List<MultipartFile> images) {
+
         Product product = productMapper.mapToEntity(productDTO);
         Product savedProduct = productRepository.save(product);
+
+        if (images != null && !images.isEmpty()) {
+            List<Image> savedImages = images.stream()
+                    .map(file -> fileStorageService.storeFile(file, "Product Image", savedProduct))
+                    .toList();
+            product.setImageList(savedImages);
+        }
+
         return productMapper.mapToDTO(savedProduct);
     }
 
@@ -49,50 +68,45 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponseDTO updateProduct(Long id, ProductUpdateDTO productDTO) {
+    public ProductResponseDTO updateProduct(Long id, ProductUpdateDTO productDTO, List<MultipartFile> newImages) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(id));
 
-        // Create a new ProductPrice
-        ProductPrice updatedProductPrice = new ProductPrice(
+        // Update basic properties
+            ProductPrice updatedProductPrice = new ProductPrice(
                 new Amount(productDTO.price()),
                 new CurrencyCode(productDTO.currencyCode())
         );
 
+        product.setProductName(new ProductName(productDTO.name()));
+        product.setProductDescription(new ProductDescription(productDTO.description()));
+        product.setProductPrice(updatedProductPrice);
+        product.setStockQuantity(new StockQuantity(productDTO.quantity()));
 
-        product = Product.builder()
-                .id(product.getId()) // Important: Preserve the ID
-                .productName(new ProductName(productDTO.name()))
-                .productDescription(new ProductDescription(productDTO.description()))
-                .productPrice(updatedProductPrice)
-                .stockQuantity(new StockQuantity(productDTO.quantity()))
-                //Categories and Images require special handling due to being relationships:
-                .categories(product.getCategories())  // Initialize with existing, then update below
-                .imageList(product.getImageList()) // Initialize with existing, then update below
-                .build();
-
-
-        // Handle Categories (if provided in the DTO)
+        // Handle Categories
         if (productDTO.categoryIds() != null && !productDTO.categoryIds().isEmpty()) {
             List<Category> categories = categoryRepository.findAllById(productDTO.categoryIds());
             product.setCategories(categories);
         }
 
-
-
-
-        // TODO: handle images -> check it later if it can be done in different way
-        if (productDTO.imageList() != null && !productDTO.imageList().isEmpty()) {
-            // Clear existing and save/set new images (as in the previous example).
-            product.getImageList().clear(); // Clear existing images
-            List<Image> newImages = productDTO.imageList().stream()
-                    .map(productMapper::mapToImageEntity).toList();
-            imageRepository.saveAll(newImages); // Save new images
-            product.getImageList().addAll(newImages);
+        // Handle new images
+        if (newImages != null && !newImages.isEmpty()) {
+            for (MultipartFile file : newImages) {
+                try {
+                    Image savedImage = fileStorageService.storeFile(file, "Product Image", product);
+                    if (savedImage != null) {
+                        savedImage.setProduct(product);
+                        product.getImageList().add(savedImage);
+                        imageRepository.save(savedImage);
+                    }
+                } catch (FileStorageException e) {
+                    log.error("Failed to store image for product {}: {}", id, e.getMessage());
+                }
+            }
         }
 
-
-        return productMapper.mapToDTO(productRepository.save(product));
+        Product savedProduct = productRepository.save(product);
+        return productMapper.mapToDTO(savedProduct);
     }
 
     @Override
@@ -130,5 +144,26 @@ public class ProductServiceImpl implements ProductService {
         return products.map(productMapper::mapToDTO);
     }
 
+    @Override
+    public void deleteProductImage(Long productId, Long imageId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException(productId));
 
+        Image imageToDelete = product.getImageList().stream()
+                .filter(image -> image.getId().equals(imageId))
+                .findFirst()
+                .orElseThrow(() -> new ImageNotFoundException(imageId));
+
+        // Remove image from product's list
+        product.getImageList().remove(imageToDelete);
+
+        // Delete image file and entity
+        fileStorageService.deleteImage(imageToDelete);
+
+        // Save the updated product
+        productRepository.save(product);
+    }
 }
+
+
+

@@ -1,6 +1,5 @@
 package com.rj.ecommerce_backend.domain.product;
 
-import com.rj.ecommerce_backend.domain.product.dtos.ImageDTO;
 import com.rj.ecommerce_backend.domain.product.dtos.ProductCreateDTO;
 import com.rj.ecommerce_backend.domain.product.dtos.ProductResponseDTO;
 import com.rj.ecommerce_backend.domain.product.dtos.ProductUpdateDTO;
@@ -19,43 +18,26 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+
 
 
 @RestController
 @RequestMapping("/api/v1/admin/products")
-@RequiredArgsConstructor
 @Slf4j
-public class AdminProductController {
+public class AdminProductController extends BaseProductController {
 
-    private final ProductService productService;
-    private final FileStorageService fileStorageService;
+    public AdminProductController(ProductService productService,
+                                  FileStorageService fileStorageService) {
+        super(productService, fileStorageService);
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> getProductById(@PathVariable Long id) {
         return productService.getProductById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping
-    public ResponseEntity<Page<ProductResponseDTO>> getAllProducts(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sort) {
-
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
-        Page<ProductResponseDTO> products = productService.getAllProducts(pageable);
-        return ResponseEntity.ok(products);
     }
 
 
@@ -122,13 +104,13 @@ public class AdminProductController {
         return ResponseEntity.ok(updatedProduct);
     }
 
-    @GetMapping("/images/{fileName}")
-    public ResponseEntity<Resource> getImage(@PathVariable String fileName) {
-        Resource resource = fileStorageService.loadFileAsResource(fileName);
-        return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_JPEG) // You might want to make this dynamic
-                .body(resource);
-    }
+//    @GetMapping("/images/{fileName}")
+//    public ResponseEntity<Resource> getImage(@PathVariable String fileName) {
+//        Resource resource = fileStorageService.loadFileAsResource(fileName);
+//        return ResponseEntity.ok()
+//                .contentType(MediaType.IMAGE_JPEG) // You might want to make this dynamic
+//                .body(resource);
+//    }
 
     @DeleteMapping("/{productId}/images/{imageId}")
     public ResponseEntity<Void> deleteProductImage(

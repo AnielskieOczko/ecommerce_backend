@@ -65,11 +65,12 @@ public class ProductMapper {
      * @return A mapped Image entity
      */
     public Image mapToImageEntity(ImageDTO imageDTO) {
-        Image image = new Image();
-        image.setPath(imageDTO.path());
-        image.setAltText(imageDTO.altText());
-        image.setMimeType(imageDTO.mimeType());
-        return image;
+        return Image.builder()
+                .path(imageDTO.path())
+                .altText(imageDTO.altText() != null ? imageDTO.altText() : "Product image")
+                .mimeType(imageDTO.mimeType())
+//                .createdAt(LocalDateTime.now())
+                .build();
     }
 
     /**

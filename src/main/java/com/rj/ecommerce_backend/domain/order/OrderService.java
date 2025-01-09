@@ -16,11 +16,14 @@ public interface OrderService {
     OrderDTO createOrder(Long userId, AddressDTO shippingAddress, String paymentMethod, CartDTO cartDTO);
     Optional<Order> getOrderById(Long orderId);
     Page<OrderDTO> getOrdersForUser(Long userId, Pageable pageable);
-    Page<OrderDTO> getAllOrders(Pageable pageable); // (admin)
     OrderDTO updateOrderStatus(Long orderId, String newStatus);
-    void cancelOrder(Long orderId);
+    void cancelOrder(Long userId, Long orderId);
     BigDecimal calculateOrderTotal(List<CartItemDTO> cartItems);
 
+
+    // Admin only methods
+    Page<OrderDTO> getAllOrders(Pageable pageable);
+    void cancelOrderAdmin(Long orderId);
     // TODO: optional
     // searchOrders(OrderSearchCriteria criteria);
     // getOrderHistory(Long userId);

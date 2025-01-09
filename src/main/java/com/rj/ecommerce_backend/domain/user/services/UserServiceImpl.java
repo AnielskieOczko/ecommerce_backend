@@ -1,253 +1,152 @@
 package com.rj.ecommerce_backend.domain.user.services;
 
-import com.rj.ecommerce_backend.domain.user.Authority;
 import com.rj.ecommerce_backend.domain.user.User;
 import com.rj.ecommerce_backend.domain.user.dtos.*;
-import com.rj.ecommerce_backend.domain.user.exceptions.AuthorityNotFoundException;
-import com.rj.ecommerce_backend.domain.user.repositories.AuthorityRepository;
+import com.rj.ecommerce_backend.domain.user.exceptions.UserNotFoundException;
+import com.rj.ecommerce_backend.domain.user.mappers.UserMapper;
 import com.rj.ecommerce_backend.domain.user.repositories.UserRepository;
 import com.rj.ecommerce_backend.domain.user.valueobject.*;
 import com.rj.ecommerce_backend.securityconfig.*;
+import com.rj.ecommerce_backend.securityconfig.dto.AuthResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
 @Slf4j
-public class UserServiceImpl extends SecuredBaseService implements UserService {
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final AuthorityRepository authorityRepository;
     private final PasswordEncoder passwordEncoder;
-    private final LogoutService logoutService;
-    private final JwtUtils jwtUtils;
-    private final AuthenticationManager authenticationManager;
-
-    public UserServiceImpl(SecurityContextImpl securityContext,
-                           UserRepository userRepository,
-                           AuthorityRepository authorityRepository,
-                           PasswordEncoder passwordEncoder,
-                           LogoutService logoutService,
-                           JwtUtils jwtUtils,
-                           AuthenticationManager authenticationManager) {
-        super(securityContext);
-        this.userRepository = userRepository;
-        this.authorityRepository = authorityRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.logoutService = logoutService;
-        this.jwtUtils = jwtUtils;
-        this.authenticationManager = authenticationManager;
-    }
+    private final UserMapper userMapper;
+    private final SecurityContextImpl securityContext;
+    private final AuthService authService;
+    private final RefreshTokenRepository refreshTokenRepository;
 
 
     @Override
-    public Optional<User> findUserByName(String firstname) {
-        return userRepository.findUserByFirstName(firstname);
-    }
-
-    @Override
-    public Optional<User> findUserByEmail(String email) {
-        return userRepository.findUserByEmail(email);
-    }
-
-    @Override
-    public UserResponseDto getUser(Long userId) {
-        return mapToUserResponseDto(userRepository.findUserById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")));
-    }
-
-    @Override
-    public Optional<User> getUserForValidation(Long userId) {
-        return Optional.ofNullable(userRepository.findUserById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")));
-    }
-
-    @Override
-    public UserResponseDto createUser(CreateUserRequest createUserRequest) {
-
-        Set<String> authorityNames = createUserRequest.authorities();
-
-        Set<Authority> authorities = authorityRepository.findByNameIn(authorityNames);
-
-        if (authorities.size() != authorityNames.size()) {
-            throw new AuthorityNotFoundException("One or more authorities not found");
-        }
-
-        User user = new User();
-        user.setFirstName(createUserRequest.firstName());
-        user.setLastName(createUserRequest.lastName());
-        user.setEmail(Email.of(createUserRequest.email()));
-        user.setAddress(new Address(
-                createUserRequest.address().street(),
-                createUserRequest.address().city(),
-                new ZipCode(createUserRequest.address().zipCode()),
-                createUserRequest.address().country()
-        ));
-        user.setPhoneNumber(new PhoneNumber(createUserRequest.phoneNumber().value()));
-        user.setActive(true);
-        user.setDateOfBirth(createUserRequest.dateOfBirth());
-
-        // 4. Hash the Password
-        String encodedPassword = passwordEncoder.encode(createUserRequest.password());
-        user.setPassword(new Password(encodedPassword));
-
-        user.setAuthorities(authorities);
-
-
-        // 5. Save the User
-        User createdUser = userRepository.save(user);
-        return mapToUserResponseDto(createdUser);
-
-    }
-
-    @Override
-    public UserResponseDto updateUser(Long userId, UpdateUserRequest updateUserRequest,
-                                      HttpServletRequest request,
-                                      HttpServletResponse response) {
-
-        // 1. Security Check
-        checkAccess(userId);
-
-        // 2. Find User
+    public UserResponseDto getProfile(Long userId) {
+        log.info("Getting profile data for user: {}", userId);
         User user = userRepository.findUserById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+        securityContext.checkAccess(userId);
 
-        // 3. Store old email for comparison
-        String oldEmail = user.getEmail().value();
+        log.info("Successfully retrieved profile data for user: {}", userId);
+        return userMapper.mapToUserResponseDto(user);
+    }
 
-        // 4. Update basic information
-        updateBasicInformation(user, updateUserRequest);
+    @Override
+    public UserResponseDto updateBasicDetails(Long userId, UpdateBasicDetailsRequest request) {
+        log.info("Updating basic details for user: {}", userId);
+        User user = userRepository.findUserById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
 
-        // 5. Handle email update
-        boolean emailChanged = false;
-        if (!updateUserRequest.email().isEmpty() && !oldEmail.equals(updateUserRequest.email())) {
-            validateNewEmail(updateUserRequest.email());
-            user.setEmail(Email.of(updateUserRequest.email()));
-            emailChanged = true;
+        securityContext.checkAccess(userId);
+        userMapper.updateBasicInformation(user, request);
+
+        User savedUser = userRepository.save(user);
+        log.info("Successfully updated basic details for user: {}", userId);
+        return userMapper.mapToUserResponseDto(savedUser);
+    }
+
+    @Override
+    public AuthResponse changeEmail(Long userId, ChangeEmailRequest changeEmailRequest,
+                            HttpServletRequest request,
+                            HttpServletResponse response) {
+        log.info("Processing email change request for user: {}", userId);
+        securityContext.checkAccess(userId);
+        try {
+            User user = userRepository.findUserById(userId)
+                    .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+
+            // Update email
+            String oldEmail = user.getEmail().value();
+            user.setEmail(new Email(changeEmailRequest.newEmail()));
+            userRepository.save(user);
+
+            log.info("Email changed from {} to {} for user {}",
+                    oldEmail, changeEmailRequest.newEmail(), userId);
+
+            return authService.handleEmailUpdate(
+                    user,
+                    changeEmailRequest.currentPassword(),
+                    request, response);
+        } catch (Exception e) {
+            log.error("Failed to change email for user {}", userId, e);
+            return AuthResponse.builder()
+                    .success(false)
+                    .message("Failed to change email: " + e.getMessage())
+                    .build();
         }
+    }
 
-        // 6. Handle password update
-        if (!updateUserRequest.password().isEmpty()) {
-            String encodedPassword = passwordEncoder.encode(updateUserRequest.password());
+    @Override
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        log.info("Updating password for user: {}", userId);
+
+        securityContext.checkAccess(userId);
+
+        User user = userRepository.findUserById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+
+        if (!request.newPassword().isEmpty()) {
+            String encodedPassword = passwordEncoder.encode(request.newPassword());
             user.setPassword(new Password(encodedPassword));
         }
 
-        // 7. Save user
+        userRepository.save(user);
+        log.info("Successfully updated password for user: {}", userId);
+    }
+
+    @Override
+    public UserResponseDto updateAccountStatus(Long userId, AccountStatusRequest request) {
+        log.debug("Updating account status for user ID: {} to {}", userId, request.active());
+
+        securityContext.checkAccess(userId);
+
+        User user = userRepository.findUserById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+
+        user.setActive(request.active());
         User savedUser = userRepository.save(user);
 
-        // 8. Handle security context update if email changed
-        if (emailChanged) {
-            handleEmailUpdate(request, response, savedUser, updateUserRequest.password());
-        }
+        log.info("Successfully updated account status for user ID: {} to {}",
+                userId, request.active() ? "active" : "inactive");
 
-        return mapToUserResponseDto(savedUser);
+        return userMapper.mapToUserResponseDto(savedUser);
+    }
+
+    @Override
+    public void requestPasswordReset(String email) {
 
     }
 
     @Override
-    public void deleteUser(Long userId) {
+    public void resetPassword(String token, String newPassword) {
 
+    }
+
+    @Override
+    public void deleteAccount(Long userId) {
+        log.debug("Deleting account for user with id: {}", userId);
         // securityCheck
-        checkAccess(userId);
+        securityContext.checkAccess(userId);
 
         User user = userRepository.findUserById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found for id: " + userId));
 
-        log.info("Deleting user with ID: {}", userId);
+        // remove refresh tokens before user account delete
+        refreshTokenRepository.deleteByUserId(user.getId());
+
         userRepository.delete(user);
-    }
-
-    private void updateBasicInformation(User user, UpdateUserRequest request) {
-        user.setFirstName(request.firstName());
-        user.setLastName(request.lastName());
-        user.setAddress(new Address(
-                request.address().street(),
-                request.address().city(),
-                new ZipCode(request.address().zipCode()),
-                request.address().country()
-        ));
-        user.setPhoneNumber(new PhoneNumber(request.phoneNumber().value()));
-        user.setActive(true);
-        user.setDateOfBirth(request.dateOfBirth());
-    }
-
-    private UserResponseDto mapToUserResponseDto(User user) {
-        return new UserResponseDto(
-                user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getEmail().value(),
-                mapToAddressDto(user.getAddress()),
-                mapToPhoneNumberDto(user.getPhoneNumber().value()),
-                user.getDateOfBirth(),
-                user.getAuthorities().stream()
-                        .map(Authority::getName)
-                        .collect(Collectors.toSet())
-        );
-    }
-
-
-    private AddressDto mapToAddressDto(Address address) {
-        return new AddressDto(
-                address.street(),
-                address.city(),
-                address.zipCode().value(),
-                address.country()
-        );
-    }
-
-    private PhoneNumberDto mapToPhoneNumberDto(String phoneNumber) {
-        return new PhoneNumberDto(
-                phoneNumber
-        );
-    }
-
-    private void validateNewEmail(String newEmail) {
-        if (userRepository.existsByEmail(Email.of(newEmail))) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already exists");
-        }
-    }
-
-    private void handleEmailUpdate(HttpServletRequest request,
-                                   HttpServletResponse response,
-                                   User user,
-                                   String password) {
-        // 1. Logout the user from the current session
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null) {
-            logoutService.logout(request, response, auth);
-        }
-
-        // 2. If password was not changed, we need to get it from the user object
-        String credentials = !password.isEmpty() ? password : user.getPassword().value();
-
-        // 3. Create new authentication token with updated email
-        Authentication newAuth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(user.getEmail().value(), credentials)
-        );
-
-        // 4. Update security context
-        SecurityContextHolder.getContext().setAuthentication(newAuth);
-
-        // 5. Generate new JWT token
-        String newToken = jwtUtils.generateJwtToken(newAuth);
-
-        // 6. Add new token to response header
-        response.setHeader("Authorization", "Bearer " + newToken);
+        log.info("Successfully deleted account for user with id: {}", userId);
     }
 
 }

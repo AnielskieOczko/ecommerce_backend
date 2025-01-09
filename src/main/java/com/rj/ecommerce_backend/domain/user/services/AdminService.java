@@ -1,19 +1,34 @@
 package com.rj.ecommerce_backend.domain.user.services;
 
 import com.rj.ecommerce_backend.domain.user.User;
-import com.rj.ecommerce_backend.domain.user.dtos.CreateUserRequest;
-import com.rj.ecommerce_backend.domain.user.dtos.UpdateUserRequest;
-import com.rj.ecommerce_backend.domain.user.dtos.UserResponseDto;
+import com.rj.ecommerce_backend.domain.user.dtos.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface AdminService {
 
-    List<User> findAllUsers();
-    Optional<User> findUserByEmail(String email);
-    UserResponseDto getUserProfileById(Long userId);
-    UserResponseDto createUser(CreateUserRequest createUserRequest);
-    UserResponseDto updateUser(Long userId, UpdateUserRequest updateUserRequest);
+    // User management
+    Page<UserResponseDto> getAllUsers(Pageable pageable, String search);
+    UserResponseDto getUserById(Long userId);
+    UserResponseDto createUser(CreateUserRequest request);
+    UserResponseDto updateUser(Long userId, AdminUpdateUserRequest request);
     void deleteUser(Long userId);
+    Optional<User> getUserForValidation(Long userId);
+
+    // User status management
+    UserResponseDto updateAccountStatus(Long userId, AccountStatusRequest request);
+
+    // Role management
+    UserResponseDto updateUserAuthorities(Long userId, AdminChangeUserAuthorityRequest adminChangeUserRoleRequest);
+
+    // Bulk operations
+    void enableUsers(List<Long> userIds);
+    void disableUsers(List<Long> userIds);
+    void deleteUsers(List<Long> userIds);
+
+    // Statistics
+    UserStatisticsDTO getUserStatistics();
 }

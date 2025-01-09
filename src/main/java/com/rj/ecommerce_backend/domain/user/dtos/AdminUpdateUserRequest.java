@@ -1,13 +1,15 @@
 package com.rj.ecommerce_backend.domain.user.dtos;
 
+import com.rj.ecommerce_backend.domain.user.Authority;
+import jakarta.validation.constraints.Email;
+
 import java.time.LocalDate;
 import java.util.Set;
 
-public record UserResponseDto(
-        Long userId,
+public record AdminUpdateUserRequest(
         String firstName,
         String lastName,
-        String email,
+        @Email String email,
         AddressDto address,
         PhoneNumberDto phoneNumber,
         LocalDate dateOfBirth,

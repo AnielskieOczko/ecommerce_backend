@@ -2,6 +2,7 @@ package com.rj.ecommerce_backend.securityconfig;
 
 import com.rj.ecommerce_backend.domain.user.dtos.CreateUserRequest;
 import com.rj.ecommerce_backend.domain.user.dtos.UserResponseDto;
+import com.rj.ecommerce_backend.domain.user.services.AdminServiceImpl;
 import com.rj.ecommerce_backend.domain.user.services.UserService;
 import com.rj.ecommerce_backend.securityconfig.dto.*;
 import com.rj.ecommerce_backend.securityconfig.exception.UserAuthenticationException;
@@ -26,21 +27,21 @@ public class AuthController {
     private final LogoutService logoutService;
     private final JwtBlacklistService jwtBlackListedService;
     private final UserService userService;
+    private final AdminServiceImpl adminService;
 
     @PostMapping("/register")
     public ResponseEntity<UserResponseDto> registerUser(@Valid @RequestBody CreateUserRequest createUserRequest) {
         log.info("Creating user {}", createUserRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(createUserRequest));
+        return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createUser(createUserRequest));
     }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         try {
-            JwtResponse jwtResponse = authService.authenticateUser(loginRequest);
-            return ResponseEntity.ok(AuthResponse.builder()
-                    .success(true)
-                    .data(jwtResponse)
-                    .build());
+
+            AuthResponse authResponse = authService.authenticateUser(loginRequest);
+            return ResponseEntity.ok(authResponse);
+
         } catch (UserAuthenticationException e) {
             log.error("Authentication failed", e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -64,7 +65,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<JwtResponse> refreshToken(@RequestBody TokenRefreshRequest request) {
+    public ResponseEntity<AuthResponse> refreshToken(@RequestBody TokenRefreshRequest request) {
         return ResponseEntity.ok(authService.refreshToken(request));
     }
 

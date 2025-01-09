@@ -1,6 +1,8 @@
 package com.rj.ecommerce_backend;
 
 import com.rj.ecommerce_backend.domain.user.Authority;
+import com.rj.ecommerce_backend.domain.user.services.AdminService;
+import com.rj.ecommerce_backend.domain.user.services.AdminServiceImpl;
 import com.rj.ecommerce_backend.domain.user.services.AuthorityServiceImpl;
 import com.rj.ecommerce_backend.domain.user.services.UserService;
 import com.rj.ecommerce_backend.domain.user.dtos.AddressDto;
@@ -22,6 +24,7 @@ import java.util.Set;
 public class TestDataLoader {
 
     private final UserService userServiceImpl;
+    private final AdminServiceImpl adminService;
     private final AuthorityServiceImpl authorityServiceImpl;
     private static final String ROLE_ADMIN = "ROLE_ADMIN";
     private static final String ROLE_USER = "ROLE_USER";
@@ -71,7 +74,7 @@ public class TestDataLoader {
                 Set.of(ROLE_ADMIN)
         );
 
-        userServiceImpl.createUser(createUserRequest);
+        adminService.createUser(createUserRequest);
 
     }
 }

@@ -5,6 +5,6 @@ import jakarta.validation.constraints.NotEmpty;
 
 
 @Embeddable
-public record ZipCode(@NotEmpty String value) {
+public record ZipCode(String value) {
     // validation
 }

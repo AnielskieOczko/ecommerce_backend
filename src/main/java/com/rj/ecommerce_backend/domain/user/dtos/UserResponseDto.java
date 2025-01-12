@@ -11,5 +11,6 @@ public record UserResponseDto(
         AddressDto address,
         PhoneNumberDto phoneNumber,
         LocalDate dateOfBirth,
-        Set<String> authorities
+        Set<String> authorities,
+        Boolean isActive
 ) { }

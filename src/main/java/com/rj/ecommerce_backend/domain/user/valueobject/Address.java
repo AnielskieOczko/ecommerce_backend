@@ -5,8 +5,8 @@ import jakarta.validation.constraints.NotEmpty;
 
 @Embeddable
 public record Address(
-        @NotEmpty String street,
-        @NotEmpty String city,
+        String street,
+        String city,
         ZipCode zipCode,
-        @NotEmpty String country
+        String country
 ) { }

@@ -2,6 +2,7 @@ package com.rj.ecommerce_backend.domain.product;
 
 import com.rj.ecommerce_backend.domain.product.dtos.ProductCreateDTO;
 import com.rj.ecommerce_backend.domain.product.dtos.ProductResponseDTO;
+import com.rj.ecommerce_backend.domain.product.dtos.ProductSearchCriteria;
 import com.rj.ecommerce_backend.domain.product.dtos.ProductUpdateDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +20,7 @@ public interface ProductService {
 
     Optional<Product> getProductEntityForValidation(Long productId);
 
-    Page<ProductResponseDTO> getAllProducts(Pageable pageable);
+    Page<ProductResponseDTO> getAllProducts(Pageable pageable, ProductSearchCriteria criteria);
 
     ProductResponseDTO updateProduct(Long id, ProductUpdateDTO productDTO, List<MultipartFile> newImages);
 

@@ -4,6 +4,7 @@ import com.rj.ecommerce_backend.domain.product.dtos.ProductCreateDTO;
 import com.rj.ecommerce_backend.domain.product.dtos.ProductResponseDTO;
 import com.rj.ecommerce_backend.domain.product.dtos.ProductUpdateDTO;
 import com.rj.ecommerce_backend.domain.product.exceptions.ProductNotFoundException;
+import com.rj.ecommerce_backend.domain.sortingfiltering.SortValidator;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,13 +30,14 @@ import java.util.List;
 public class AdminProductController extends BaseProductController {
 
     public AdminProductController(ProductService productService,
-                                  FileStorageService fileStorageService) {
-        super(productService, fileStorageService);
+                                  FileStorageService fileStorageService,
+                                  SortValidator sortValidator) {
+        super(productService, fileStorageService, sortValidator);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ProductResponseDTO> getProductById(@PathVariable Long id) {
-        return productService.getProductById(id)
+    @GetMapping("/{productId}")
+    public ResponseEntity<ProductResponseDTO> getProductById(@PathVariable Long productId) {
+        return productService.getProductById(productId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -56,10 +58,10 @@ public class AdminProductController extends BaseProductController {
 
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long productId) {
         try {
-            productService.deleteProduct(id);
+            productService.deleteProduct(productId);
             return ResponseEntity.noContent().build();
         } catch (ProductNotFoundException ex) {
             return ResponseEntity.notFound().build();

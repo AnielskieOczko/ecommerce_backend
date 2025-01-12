@@ -3,43 +3,48 @@ package com.rj.ecommerce_backend.domain.order;
 import com.rj.ecommerce_backend.domain.order.dtos.OrderCreationRequest;
 import com.rj.ecommerce_backend.domain.order.dtos.OrderDTO;
 import com.rj.ecommerce_backend.domain.order.dtos.StatusUpdateRequest;
+import com.rj.ecommerce_backend.domain.user.dtos.UserResponseDto;
 import com.rj.ecommerce_backend.securityconfig.SecurityContext;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 
 @Slf4j
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class OrderController {
 
     private final OrderService orderService;
     private final OrderMapper orderMapper;
-    private final SecurityContext securityContext;
 
-
-    @PostMapping("/create")
-    public ResponseEntity<OrderDTO> createOrder(
-            @Valid @RequestBody OrderCreationRequest orderRequest
+    @GetMapping("/users/{userId}/orders")
+    public ResponseEntity<Page<OrderDTO>> getAllUserOrders(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sort
     ) {
-        Long userId = securityContext.getCurrentUser().getId();
-        log.info("Creating order for user: {}", userId);
+        log.info("Received request to retrieve orders for userId:  {}", userId);
 
-        OrderDTO createdOrder = orderService.createOrder(
-                userId,
-                orderRequest.shippingAddress(),
-                orderRequest.paymentMethod(),
-                orderRequest.cart()
-        );
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdOrder);
+        // TODO: implement search feature
+        Page<OrderDTO> orders = orderService.getOrdersForUser(userId, pageable);
+
+        log.info("Successfully retrieve orders for userId:  {}", userId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(orders);
     }
 
     @GetMapping("/{orderId}")
@@ -53,37 +58,15 @@ public class OrderController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/user")
-    public ResponseEntity<Page<OrderDTO>> getUserOrders(
-            Pageable pageable
-    ) {
-        log.info("Retrieving orders for user");
 
-        Long userId = securityContext.getCurrentUser().getId();
-        Page<OrderDTO> orders = orderService.getOrdersForUser(userId, pageable);
-
-        return ResponseEntity.ok(orders);
-    }
-
-    @PatchMapping("/{orderId}/status")
-    public ResponseEntity<OrderDTO> updateOrderStatus(
-            @PathVariable Long orderId,
-            @RequestBody StatusUpdateRequest statusUpdate
-    ) {
-        log.info("Updating status for order {}", orderId);
-
-        OrderDTO updatedOrder = orderService.updateOrderStatus(orderId, statusUpdate.newStatus());
-
-        return ResponseEntity.ok(updatedOrder);
-    }
-
-    @DeleteMapping("/{orderId}")
+    @DeleteMapping("/users/{userId}/orders/{orderId}")
     public ResponseEntity<Void> cancelOrder(
+            @PathVariable Long userId,
             @PathVariable Long orderId
     ) {
         log.info("Cancelling order {}", orderId);
 
-        orderService.cancelOrder(orderId);
+        orderService.cancelOrder(userId, orderId);
 
         return ResponseEntity.noContent().build();
     }

@@ -14,6 +14,8 @@ import com.rj.ecommerce_backend.domain.product.exceptions.InsufficientStockExcep
 import com.rj.ecommerce_backend.domain.product.exceptions.ProductNotFoundException;
 import com.rj.ecommerce_backend.domain.user.User;
 import com.rj.ecommerce_backend.domain.user.exceptions.UserNotFoundException;
+import com.rj.ecommerce_backend.domain.user.services.AdminService;
+import com.rj.ecommerce_backend.domain.user.services.AdminServiceImpl;
 import com.rj.ecommerce_backend.domain.user.services.UserService;
 import com.rj.ecommerce_backend.domain.user.valueobject.Address;
 import com.rj.ecommerce_backend.domain.user.valueobject.ZipCode;
@@ -43,6 +45,7 @@ public class OrderServiceImpl implements OrderService{
     private final SecurityContextImpl securityContext;
     private final ProductService productService;
     private final UserService userService;
+    private final AdminService adminService;
     private final ProductMapper productMapper;
     private final OrderMapper orderMapper;
 
@@ -50,7 +53,7 @@ public class OrderServiceImpl implements OrderService{
     public OrderDTO createOrder(Long userId, AddressDTO shippingAddress, String paymentMethod, CartDTO cartDTO) {
         // Validate user access and existence
         securityContext.checkAccess(userId);
-        User user = userService.getUserForValidation(userId)
+        User user = adminService.getUserForValidation(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         // Validate product stock before processing
@@ -141,13 +144,16 @@ public class OrderServiceImpl implements OrderService{
     }
 
     @Override
-    public void cancelOrder(Long orderId) {
+    public void cancelOrder(Long userId, Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
 
-        securityContext.checkAccess(order.getUser().getId());
+        // Validate order belongs to user
+        if (!order.getUser().getId().equals(userId)) {
+            throw new AccessDeniedException("User " + userId + " is not authorized to cancel order " + orderId);
+        }
 
-        // Validate order can be cancelled
+        // Validate order status
         if (!order.getOrderStatus().equals("PENDING")) {
             throw new OrderCancellationException("Cannot cancel order with status: " + order.getOrderStatus());
         }
@@ -155,7 +161,18 @@ public class OrderServiceImpl implements OrderService{
         order.setOrderStatus("CANCELLED");
         orderRepository.save(order);
 
-        log.info("Order {} cancelled", orderId);
+        log.info("Order {} cancelled by user {}", orderId, userId);
+    }
+
+    @Override
+    public void cancelOrderAdmin(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
+
+        order.setOrderStatus("CANCELLED");
+        orderRepository.save(order);
+
+        log.info("Order {} cancelled by admin", orderId);
     }
 
     @Override

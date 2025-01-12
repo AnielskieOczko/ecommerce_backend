@@ -68,7 +68,7 @@ public class AdminCategoryController {
 
         Page<CategoryResponseDTO> categories = categoryService.getAllCategories(pageable, criteria);
 
-        log.info("Successfully retrieved filtered users. Total elements: {}", categories.getTotalElements());
+        log.info("Successfully retrieved filtered categories. Total elements: {}", categories.getTotalElements());
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(categories);

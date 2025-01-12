@@ -1,6 +1,7 @@
 package com.rj.ecommerce_backend.domain.product;
 
 import com.rj.ecommerce_backend.domain.product.dtos.ProductResponseDTO;
+import com.rj.ecommerce_backend.domain.sortingfiltering.SortValidator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
@@ -17,8 +18,9 @@ import org.springframework.web.bind.annotation.*;
 public class PublicProductController extends BaseProductController {
 
     public PublicProductController(ProductService productService,
-                                   FileStorageService fileStorageService) {
-        super(productService, fileStorageService);
+                                   FileStorageService fileStorageService,
+                                   SortValidator sortValidator) {
+        super(productService, fileStorageService, sortValidator);
     }
 
 }

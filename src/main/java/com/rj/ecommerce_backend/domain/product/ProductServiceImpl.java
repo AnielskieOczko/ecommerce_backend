@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -61,8 +62,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public Page<ProductResponseDTO> getAllProducts(Pageable pageable) {
-        Page<Product> products = productRepository.findAll(pageable);
+    public Page<ProductResponseDTO> getAllProducts(Pageable pageable, ProductSearchCriteria criteria) {
+
+        Specification<Product> spec = criteria.toSpecification();
+
+        Page<Product> products = productRepository.findAll(spec, pageable);
 
         return products.map(productMapper::mapToDTO);
     }

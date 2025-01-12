@@ -1,10 +1,9 @@
 package com.rj.ecommerce_backend.domain.user.controllers;
 
-import com.rj.ecommerce_backend.domain.user.SortValidator;
-import com.rj.ecommerce_backend.domain.user.User;
+import com.rj.ecommerce_backend.domain.sortingfiltering.SortValidator;
+import com.rj.ecommerce_backend.domain.sortingfiltering.UserSortField;
 import com.rj.ecommerce_backend.domain.user.dtos.*;
 import com.rj.ecommerce_backend.domain.user.services.AdminService;
-import com.rj.ecommerce_backend.domain.user.services.UserSpecifications;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,8 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Arrays;
 
 @RestController
 @RequestMapping("/api/v1/admin/users")
@@ -54,8 +51,7 @@ public class AdminUserController {
         log.info("Received request to retrieve users with filters. search={}, isActive={}, role={}",
                 search, isActive, authority);
 
-
-        Sort validatedSort = sortValidator.validateAndBuildSort(sort);
+        Sort validatedSort = sortValidator.validateAndBuildSort(sort, UserSortField.class);
         Pageable pageable = PageRequest.of(page, size, validatedSort);
         UserSearchCriteria criteria = new UserSearchCriteria(
                 search,

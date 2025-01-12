@@ -5,9 +5,8 @@ import com.rj.ecommerce_backend.domain.product.dtos.CategoryResponseDTO;
 import com.rj.ecommerce_backend.domain.product.dtos.CategorySearchCriteria;
 import com.rj.ecommerce_backend.domain.product.dtos.CategoryUpdateDTO;
 import com.rj.ecommerce_backend.domain.product.exceptions.CategoryNotFoundException;
-import com.rj.ecommerce_backend.domain.user.SortValidator;
-import com.rj.ecommerce_backend.domain.user.dtos.UserResponseDto;
-import com.rj.ecommerce_backend.domain.user.dtos.UserSearchCriteria;
+import com.rj.ecommerce_backend.domain.sortingfiltering.CategorySortField;
+import com.rj.ecommerce_backend.domain.sortingfiltering.SortValidator;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/admin/categories")
@@ -30,7 +27,7 @@ import java.util.List;
 public class AdminCategoryController {
 
     private final CategoryService categoryService;
-    private final CategorySortValidator categorySortValidator;
+    private final SortValidator sortValidator;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -62,7 +59,7 @@ public class AdminCategoryController {
         log.info("Received request to retrieve categories with filters. search={}, name={}",
                 search, name);
 
-        Sort validatedSort = categorySortValidator.validateAndBuildSort(sort);
+        Sort validatedSort = sortValidator.validateAndBuildSort(sort, CategorySortField.class);
         Pageable pageable = PageRequest.of(page, size, validatedSort);
         CategorySearchCriteria criteria = new CategorySearchCriteria(
                 search,

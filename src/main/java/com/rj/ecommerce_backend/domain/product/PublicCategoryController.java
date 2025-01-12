@@ -1,12 +1,9 @@
 package com.rj.ecommerce_backend.domain.product;
 
-import com.rj.ecommerce_backend.domain.product.dtos.CategoryCreateDTO;
+import com.rj.ecommerce_backend.domain.sortingfiltering.CategorySortField;
+import com.rj.ecommerce_backend.domain.sortingfiltering.SortValidator;
 import com.rj.ecommerce_backend.domain.product.dtos.CategoryResponseDTO;
 import com.rj.ecommerce_backend.domain.product.dtos.CategorySearchCriteria;
-import com.rj.ecommerce_backend.domain.product.dtos.CategoryUpdateDTO;
-import com.rj.ecommerce_backend.domain.product.exceptions.CategoryNotFoundException;
-import com.rj.ecommerce_backend.domain.user.SortValidator;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -17,8 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -28,7 +23,7 @@ import java.util.List;
 public class PublicCategoryController {
 
     private final CategoryService categoryService;
-    private final CategorySortValidator categorySortValidator;
+    private final SortValidator sortValidator;
 
     @GetMapping("/{id}")
     public ResponseEntity<CategoryResponseDTO> getCategoryById(@PathVariable Long id) {
@@ -62,7 +57,7 @@ public class PublicCategoryController {
                 search, name);
 
 
-        Sort validatedSort = categorySortValidator.validateAndBuildSort(sort);
+        Sort validatedSort = sortValidator.validateAndBuildSort(sort, CategorySortField.class);
         Pageable pageable = PageRequest.of(page, size, validatedSort);
         CategorySearchCriteria criteria = new CategorySearchCriteria(
                 search,

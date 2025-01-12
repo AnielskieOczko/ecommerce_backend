@@ -28,26 +28,6 @@ public class UserControllerImpl {
 
     private final UserService userService;
 
-//    @GetMapping("/email")
-//    public ResponseEntity<Map<String, String>> getLoggedInUserEmail() {
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//
-//        if (authentication != null && authentication.isAuthenticated()) {
-//            String email = authentication.getName();
-//            Map<String, String> response = new HashMap<>();
-//            response.put("email", email);
-//            return ResponseEntity.ok(response);
-//        } else {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
-//        }
-//    }
-
-    //    @PostMapping("/add-test")
-//    public ResponseEntity<UserResponseDto> createUser(@Valid @RequestBody CreateUserRequest createUserRequest) {
-//        log.info("Creating user {}", createUserRequest);
-//        return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createUser(createUserRequest));
-//    }
-
     @GetMapping("/{userId}/profile")
     public ResponseEntity<UserResponseDto> getUserProfile(@PathVariable Long userId) {
         return ResponseEntity.ok().body(userService.getProfile(userId));

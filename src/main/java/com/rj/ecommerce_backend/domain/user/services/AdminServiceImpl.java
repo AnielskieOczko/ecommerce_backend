@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -42,11 +43,13 @@ public class AdminServiceImpl implements AdminService{
     }
 
     @Override
-    public Page<UserResponseDto> getAllUsers(Pageable pageable, String search) {
-
+    public Page<UserResponseDto> getAllUsers(Pageable pageable, UserSearchCriteria criteria) {
+        log.info("Retrieving users with search criteria: {}", criteria);
         securityContext.checkAccess(securityContext.getCurrentUser().getId());
 
-        Page<User> users = userRepository.findAll(pageable);
+        Specification<User> spec = criteria.toSpecification();
+
+        Page<User> users = userRepository.findAll(spec, pageable);
         return users.map(userMapper::mapToUserResponseDto);
     }
 

@@ -2,8 +2,12 @@ package com.rj.ecommerce_backend.domain.product;
 
 import com.rj.ecommerce_backend.domain.product.dtos.CategoryCreateDTO;
 import com.rj.ecommerce_backend.domain.product.dtos.CategoryResponseDTO;
+import com.rj.ecommerce_backend.domain.product.dtos.CategorySearchCriteria;
 import com.rj.ecommerce_backend.domain.product.dtos.CategoryUpdateDTO;
 import com.rj.ecommerce_backend.domain.product.exceptions.CategoryNotFoundException;
+import com.rj.ecommerce_backend.domain.user.SortValidator;
+import com.rj.ecommerce_backend.domain.user.dtos.UserResponseDto;
+import com.rj.ecommerce_backend.domain.user.dtos.UserSearchCriteria;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +30,7 @@ import java.util.List;
 public class AdminCategoryController {
 
     private final CategoryService categoryService;
+    private final CategorySortValidator categorySortValidator;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -46,34 +51,30 @@ public class AdminCategoryController {
     }
 
     @GetMapping
-    public Page<CategoryResponseDTO> getAllCategories(
+    public ResponseEntity<Page<CategoryResponseDTO>> getAllCategories(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String name,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String[] sort
+            @RequestParam(defaultValue = "id:asc") String sort
     ) {
 
-        List<Sort.Order> orders = Arrays.stream(sort)
-                .map(s -> {
-                    String[] parts = s.split(",");
-                    String property = parts[0];
+        log.info("Received request to retrieve categories with filters. search={}, name={}",
+                search, name);
 
-                    // Validate property against allowed values
-                    if (!property.equals("id") && !property.equals("name")) {
-                        throw new IllegalArgumentException("Invalid sort property: " + property + ". Allowed values are 'id' and 'name'.");
-                    }
+        Sort validatedSort = categorySortValidator.validateAndBuildSort(sort);
+        Pageable pageable = PageRequest.of(page, size, validatedSort);
+        CategorySearchCriteria criteria = new CategorySearchCriteria(
+                search,
+                name
+        );
 
-                    Sort.Direction direction = parts.length > 1 && parts[1].equalsIgnoreCase("asc")
-                            ? Sort.Direction.ASC
-                            : Sort.Direction.DESC;
+        Page<CategoryResponseDTO> categories = categoryService.getAllCategories(pageable, criteria);
 
-                    return new Sort.Order(direction, property);
-                })
-                .toList();
-
-
-        Pageable pageable = PageRequest.of(page, size, Sort.by(orders));
-
-        return categoryService.getAllCategories(pageable);
+        log.info("Successfully retrieved filtered users. Total elements: {}", categories.getTotalElements());
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(categories);
     }
 
     @PutMapping("/{id}")

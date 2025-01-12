@@ -1,8 +1,10 @@
 package com.rj.ecommerce_backend.domain.user.controllers;
 
+import com.rj.ecommerce_backend.domain.user.SortValidator;
 import com.rj.ecommerce_backend.domain.user.User;
 import com.rj.ecommerce_backend.domain.user.dtos.*;
 import com.rj.ecommerce_backend.domain.user.services.AdminService;
+import com.rj.ecommerce_backend.domain.user.services.UserSpecifications;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+
 @RestController
 @RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor
@@ -22,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class AdminUserController {
 
     private final AdminService adminService;
+    private final SortValidator sortValidator;
 
 
     @GetMapping("/{userId}")
@@ -39,22 +44,33 @@ public class AdminUserController {
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<UserResponseDto>> getAllUsers(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String authority,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sort
+            @RequestParam(defaultValue = "id:asc") String sort
     ) {
-        log.info("Received request to retrieve all users.");
+        log.info("Received request to retrieve users with filters. search={}, isActive={}, role={}",
+                search, isActive, authority);
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
 
-        // TODO: implement search feature
-        Page<UserResponseDto> users = adminService.getAllUsers(pageable, "");
+        Sort validatedSort = sortValidator.validateAndBuildSort(sort);
+        Pageable pageable = PageRequest.of(page, size, validatedSort);
+        UserSearchCriteria criteria = new UserSearchCriteria(
+                search,
+                isActive,
+                authority
+        );
 
-        log.info("Successfully retrieved all users.");
+        Page<UserResponseDto> users = adminService.getAllUsers(pageable, criteria);
+
+        log.info("Successfully retrieved filtered users. Total elements: {}", users.getTotalElements());
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(users);
     }
+
     @PostMapping()
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponseDto> createUser(

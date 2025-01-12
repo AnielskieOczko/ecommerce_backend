@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface AdminService {
 
     // User management
-    Page<UserResponseDto> getAllUsers(Pageable pageable, String search);
+    public Page<UserResponseDto> getAllUsers(Pageable pageable, UserSearchCriteria criteria);
     UserResponseDto getUserById(Long userId);
     UserResponseDto createUser(CreateUserRequest request);
     UserResponseDto updateUser(Long userId, AdminUpdateUserRequest request);

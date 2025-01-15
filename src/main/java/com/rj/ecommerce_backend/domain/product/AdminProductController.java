@@ -5,6 +5,12 @@ import com.rj.ecommerce_backend.domain.product.dtos.ProductResponseDTO;
 import com.rj.ecommerce_backend.domain.product.dtos.ProductUpdateDTO;
 import com.rj.ecommerce_backend.domain.product.exceptions.ProductNotFoundException;
 import com.rj.ecommerce_backend.domain.sortingfiltering.SortValidator;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +29,8 @@ import java.net.URI;
 import java.util.List;
 
 
-
+@Tag(name = "Admin Product Management", description = "Administrative APIs for product management")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/v1/admin/products")
 @Slf4j
@@ -35,8 +42,18 @@ public class AdminProductController extends BaseProductController {
         super(productService, fileStorageService, sortValidator);
     }
 
+    @Operation(
+            summary = "Get product by ID",
+            description = "Retrieves a specific product by its ID"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Product found successfully"),
+            @ApiResponse(responseCode = "404", description = "Product not found")
+    })
     @GetMapping("/{productId}")
-    public ResponseEntity<ProductResponseDTO> getProductById(@PathVariable Long productId) {
+    public ResponseEntity<ProductResponseDTO> getProductById(
+            @Parameter(description = "ID of the product to retrieve")
+            @PathVariable Long productId) {
         return productService.getProductById(productId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -81,10 +98,19 @@ public class AdminProductController extends BaseProductController {
         return ResponseEntity.ok(searchResults);
     }
 
+    @Operation(
+            summary = "Create new product",
+            description = "Creates a new product with optional images"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Product created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid product data")
+    })
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ProductResponseDTO> createProduct(
+            @Parameter(description = "Product data")
             @RequestPart("product") @Valid ProductCreateDTO productDTO,
+            @Parameter(description = "Product images (optional)")
             @RequestPart(value = "images", required = false) List<MultipartFile> images) {
 
         ProductResponseDTO createdProduct = productService.createProduct(productDTO, images);
@@ -105,14 +131,6 @@ public class AdminProductController extends BaseProductController {
         }
         return ResponseEntity.ok(updatedProduct);
     }
-
-//    @GetMapping("/images/{fileName}")
-//    public ResponseEntity<Resource> getImage(@PathVariable String fileName) {
-//        Resource resource = fileStorageService.loadFileAsResource(fileName);
-//        return ResponseEntity.ok()
-//                .contentType(MediaType.IMAGE_JPEG) // You might want to make this dynamic
-//                .body(resource);
-//    }
 
     @DeleteMapping("/{productId}/images/{imageId}")
     public ResponseEntity<Void> deleteProductImage(

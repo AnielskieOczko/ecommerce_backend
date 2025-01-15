@@ -75,6 +75,7 @@ public class SecurityConfig {
                 // Configure authorization rules
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/api-docs", "/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/**").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/v1/users/**").authenticated()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")

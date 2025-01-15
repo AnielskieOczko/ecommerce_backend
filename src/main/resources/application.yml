@@ -25,6 +25,27 @@ storage:
 server:
   port: 8080
 
+springdoc:
+  # Swagger UI Configuration
+  swagger-ui:
+    # The path where Swagger UI will be accessible
+    path: /swagger-ui.html
+    # Sort API tags alphabetically
+    tags-sorter: alpha
+    # Sort operations by HTTP method (GET, POST, PUT, DELETE)
+    operations-sorter: method
+    # Sort API groups in ascending order
+    groups-order: asc
+    # Enable Swagger UI interface
+    enabled: true
+
+  # OpenAPI documentation endpoint configuration
+  api-docs:
+    # The path where OpenAPI JSON documentation will be available
+    path: /api-docs
+    # Enable OpenAPI documentation generation
+    enabled: true
+
 ---
 # Development profile (for local container development)
 spring:

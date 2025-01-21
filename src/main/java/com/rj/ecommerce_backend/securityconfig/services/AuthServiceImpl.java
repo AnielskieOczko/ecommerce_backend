@@ -1,13 +1,15 @@
-package com.rj.ecommerce_backend.securityconfig;
+package com.rj.ecommerce_backend.securityconfig.services;
 
 import com.rj.ecommerce_backend.domain.user.User;
 import com.rj.ecommerce_backend.domain.user.UserDetailsImpl;
+import com.rj.ecommerce_backend.securityconfig.RefreshToken;
 import com.rj.ecommerce_backend.securityconfig.dto.AuthResponse;
 import com.rj.ecommerce_backend.securityconfig.dto.JwtResponse;
 import com.rj.ecommerce_backend.securityconfig.dto.LoginRequest;
 import com.rj.ecommerce_backend.securityconfig.dto.TokenRefreshRequest;
-import com.rj.ecommerce_backend.securityconfig.exception.TokenRefreshException;
-import com.rj.ecommerce_backend.securityconfig.exception.UserAuthenticationException;
+import com.rj.ecommerce_backend.securityconfig.exceptions.TokenRefreshException;
+import com.rj.ecommerce_backend.securityconfig.exceptions.UserAuthenticationException;
+import com.rj.ecommerce_backend.securityconfig.utils.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
@@ -86,6 +88,55 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    public AuthResponse handleEmailUpdate(
+            User user,
+            String currentPassword,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+
+        log.info("Updating authentication for user {} after email change", user.getId());
+
+        try {
+            // Logout current user session
+            logoutCurrentUser(request, response);
+
+            // Re-authenticate with new email
+            Authentication newAuth = authenticateWithNewEmail(user.getEmail().value(), currentPassword);
+
+            // Generate new tokens
+            String newJwtToken = jwtUtils.generateJwtToken(newAuth);
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+
+            // Update response header with new token
+            response.setHeader(AUTH_HEADER,
+                    TOKEN_PREFIX + newJwtToken);
+
+            // Create response with new tokens
+            JwtResponse jwtResponse = new JwtResponse(
+                    newJwtToken,
+                    refreshToken.getToken(),
+                    user.getId(),
+                    user.getEmail().value(),
+                    extractRoles(newAuth)
+            );
+
+            log.info("Successfully updated authentication for user {}", user.getId());
+
+            return AuthResponse.builder()
+                    .success(true)
+                    .message("Authentication updated successfully")
+                    .data(jwtResponse)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Failed to update authentication after email change for user {}", user.getId(), e);
+            return AuthResponse.builder()
+                    .success(false)
+                    .message("Failed to update authentication: " + e.getMessage())
+                    .build();
+        }
+    }
+
     private Authentication performAuthentication(LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -150,55 +201,6 @@ public class AuthServiceImpl implements AuthService {
         } catch (Exception e) {
             log.error("Failed to generate new tokens for user: {}", user.getId(), e);
             throw new TokenRefreshException("Failed to generate new tokens: " + e.getMessage());
-        }
-    }
-
-    public AuthResponse handleEmailUpdate(
-            User user,
-            String currentPassword,
-            HttpServletRequest request,
-            HttpServletResponse response) {
-
-        log.info("Updating authentication for user {} after email change", user.getId());
-
-        try {
-            // Logout current user session
-            logoutCurrentUser(request, response);
-
-            // Re-authenticate with new email
-            Authentication newAuth = authenticateWithNewEmail(user.getEmail().value(), currentPassword);
-
-            // Generate new tokens
-            String newJwtToken = jwtUtils.generateJwtToken(newAuth);
-            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
-
-            // Update response header with new token
-            response.setHeader(AUTH_HEADER,
-                    TOKEN_PREFIX + newJwtToken);
-
-            // Create response with new tokens
-            JwtResponse jwtResponse = new JwtResponse(
-                    newJwtToken,
-                    refreshToken.getToken(),
-                    user.getId(),
-                    user.getEmail().value(),
-                    extractRoles(newAuth)
-            );
-
-            log.info("Successfully updated authentication for user {}", user.getId());
-
-            return AuthResponse.builder()
-                    .success(true)
-                    .message("Authentication updated successfully")
-                    .data(jwtResponse)
-                    .build();
-
-        } catch (Exception e) {
-            log.error("Failed to update authentication after email change for user {}", user.getId(), e);
-            return AuthResponse.builder()
-                    .success(false)
-                    .message("Failed to update authentication: " + e.getMessage())
-                    .build();
         }
     }
 

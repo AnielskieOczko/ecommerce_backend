@@ -15,7 +15,6 @@ import com.rj.ecommerce_backend.domain.product.exceptions.ProductNotFoundExcepti
 import com.rj.ecommerce_backend.domain.user.User;
 import com.rj.ecommerce_backend.domain.user.exceptions.UserNotFoundException;
 import com.rj.ecommerce_backend.domain.user.services.AdminService;
-import com.rj.ecommerce_backend.domain.user.services.AdminServiceImpl;
 import com.rj.ecommerce_backend.domain.user.services.UserService;
 import com.rj.ecommerce_backend.domain.user.valueobject.Address;
 import com.rj.ecommerce_backend.domain.user.valueobject.ZipCode;
@@ -116,7 +115,7 @@ public class OrderServiceImpl implements OrderService{
     @Override
     public Page<OrderDTO> getAllOrders(Pageable pageable) {
         // Verify admin permissions
-        if (!securityContext.isAdmin()) {
+        if (securityContext.isAdmin()) {
             log.warn("Unauthorized access attempt to all orders");
             throw new AccessDeniedException("Admin access required");
         }

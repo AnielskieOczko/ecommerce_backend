@@ -1,5 +1,6 @@
 package com.rj.ecommerce_backend.domain.user;
 
+import com.rj.ecommerce_backend.domain.cart.Cart;
 import com.rj.ecommerce_backend.domain.user.valueobject.Address;
 import com.rj.ecommerce_backend.domain.user.valueobject.Email;
 import com.rj.ecommerce_backend.domain.user.valueobject.Password;
@@ -42,6 +43,9 @@ public class User {
     @Embedded
     @AttributeOverride(name = "value", column = @Column(name = "password"))
     private Password password;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Cart cart;
 
     @Embedded
     @AttributeOverrides({

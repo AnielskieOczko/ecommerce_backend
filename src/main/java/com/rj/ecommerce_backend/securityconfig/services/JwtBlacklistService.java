@@ -1,4 +1,4 @@
-package com.rj.ecommerce_backend.securityconfig;
+package com.rj.ecommerce_backend.securityconfig.services;
 
 import com.rj.ecommerce_backend.securityconfig.dto.TokenInfo;
 

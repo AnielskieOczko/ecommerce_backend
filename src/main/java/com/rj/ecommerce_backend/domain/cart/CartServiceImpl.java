@@ -6,6 +6,7 @@ import com.rj.ecommerce_backend.domain.product.Product;
 import com.rj.ecommerce_backend.domain.product.ProductRepository;
 import com.rj.ecommerce_backend.domain.user.User;
 import com.rj.ecommerce_backend.domain.user.repositories.UserRepository;
+import com.rj.ecommerce_backend.securityconfig.SecurityContext;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,8 +15,8 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Optional;
 
+
 @Service
-@Transactional
 @Slf4j
 @RequiredArgsConstructor
 public class CartServiceImpl implements CartService {
@@ -23,22 +24,39 @@ public class CartServiceImpl implements CartService {
     private final UserRepository userRepository;
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
+    private final SecurityContext securityContext;
 
     @Override
-    @Transactional()
+    @Transactional
     public CartDTO getCartForUser(Long userId) {
+        securityContext.checkAccess(userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        Cart cart = cartRepository.findByUser(user)
-                .orElseGet(() -> createEmptyCartForUser(user));
+        Cart cart = user.getCart();
+
+        if (cart == null) {
+            cart = createEmptyCartForUser(user);
+        }
 
         return CartMapper.toDto(cart);
+    }
+
+
+    @Override
+    @Transactional
+    public Cart createEmptyCartForUser(User user) {
+        Cart cart = Cart.builder().build();
+        user.setCart(cart);
+        cart.setUser(user);
+        cartRepository.save(cart);
+        return cart;
     }
 
     @Override
     @Transactional
     public CartDTO addItemToCart(Long userId, Long productId, int quantity) {
+        securityContext.checkAccess(userId);
         // Validate inputs
         if (quantity <= 0) {
             throw new IllegalArgumentException("Quantity must be positive");
@@ -48,8 +66,11 @@ public class CartServiceImpl implements CartService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        Cart cart = cartRepository.findByUser(user)
-                .orElseGet(() -> createEmptyCartForUser(user));
+        Cart cart = user.getCart();
+
+        if (cart == null) {
+            cart = createEmptyCartForUser(user);
+        }
 
         // Find product
         Product product = productRepository.findById(productId)
@@ -82,6 +103,7 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public CartDTO updateCartItemQuantity(Long userId, Long cartItemId, int quantity) {
+        securityContext.checkAccess(userId);
         // Validate inputs
         if (quantity < 0) {
             throw new IllegalArgumentException("Quantity cannot be negative");
@@ -115,6 +137,7 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public void removeItemFromCart(Long userId, Long cartItemId) {
+        securityContext.checkAccess(userId);
         // Find user's cart
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
@@ -137,6 +160,7 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public void clearCart(Long userId) {
+        securityContext.checkAccess(userId);
         // Find user's cart
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
@@ -151,14 +175,6 @@ public class CartServiceImpl implements CartService {
         cartRepository.save(cart);
     }
 
-    // Helper method to create an empty cart for a user
-    private Cart createEmptyCartForUser(User user) {
-        Cart newCart = Cart.builder()
-                .user(user)
-                .cartItems(new ArrayList<>())
-                .build();
-        return cartRepository.save(newCart);
-    }
 }
 
 

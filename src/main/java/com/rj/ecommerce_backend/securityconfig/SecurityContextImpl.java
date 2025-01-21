@@ -18,7 +18,7 @@ public class SecurityContextImpl implements SecurityContext{
     @Override
     public void checkAccess(Long userId) {
         User currentUser = getCurrentUser();
-        if (!currentUser.getId().equals(userId) && !isAdmin()) {
+        if (!currentUser.getId().equals(userId) && isAdmin()) {
             throw new AccessDeniedException("You don't have permission to access this resource");
         }
     }
@@ -34,6 +34,6 @@ public class SecurityContextImpl implements SecurityContext{
 
     public boolean isAdmin() {
         return getCurrentUser().getAuthorities().stream()
-                .anyMatch(authority -> authority.getName().equals("ROLE_ADMIN"));
+                .noneMatch(authority -> authority.getName().equals("ROLE_ADMIN"));
     }
 }

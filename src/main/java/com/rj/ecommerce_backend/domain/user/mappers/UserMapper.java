@@ -5,16 +5,8 @@ import com.rj.ecommerce_backend.domain.user.User;
 import com.rj.ecommerce_backend.domain.user.dtos.*;
 import com.rj.ecommerce_backend.domain.user.repositories.UserRepository;
 import com.rj.ecommerce_backend.domain.user.valueobject.*;
-import com.rj.ecommerce_backend.securityconfig.JwtUtils;
-import com.rj.ecommerce_backend.securityconfig.LogoutService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 

@@ -1,7 +1,10 @@
-package com.rj.ecommerce_backend.securityconfig;
+package com.rj.ecommerce_backend.securityconfig.services;
 
+import com.rj.ecommerce_backend.securityconfig.repositories.BlackListedTokenRepository;
+import com.rj.ecommerce_backend.securityconfig.repositories.BlacklistedToken;
+import com.rj.ecommerce_backend.securityconfig.utils.JwtUtils;
 import com.rj.ecommerce_backend.securityconfig.dto.TokenInfo;
-import com.rj.ecommerce_backend.securityconfig.exception.TokenBlacklistException;
+import com.rj.ecommerce_backend.securityconfig.exceptions.TokenBlacklistException;
 import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

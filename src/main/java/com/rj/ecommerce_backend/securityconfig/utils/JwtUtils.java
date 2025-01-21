@@ -1,13 +1,13 @@
-package com.rj.ecommerce_backend.securityconfig;
+package com.rj.ecommerce_backend.securityconfig.utils;
 
 import com.rj.ecommerce_backend.domain.user.UserDetailsImpl;
+import com.rj.ecommerce_backend.securityconfig.JwtConfig;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
@@ -16,7 +16,6 @@ import org.springframework.util.StringUtils;
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 @Slf4j

@@ -1,12 +1,14 @@
-package com.rj.ecommerce_backend.securityconfig;
+package com.rj.ecommerce_backend.securityconfig.controllers;
 
 import com.rj.ecommerce_backend.domain.user.dtos.CreateUserRequest;
 import com.rj.ecommerce_backend.domain.user.dtos.UserResponseDto;
 import com.rj.ecommerce_backend.domain.user.services.AdminServiceImpl;
 import com.rj.ecommerce_backend.domain.user.services.UserService;
 import com.rj.ecommerce_backend.securityconfig.dto.*;
-import com.rj.ecommerce_backend.securityconfig.exception.UserAuthenticationException;
-import jakarta.servlet.http.HttpServletRequest;
+import com.rj.ecommerce_backend.securityconfig.exceptions.UserAuthenticationException;
+import com.rj.ecommerce_backend.securityconfig.services.AuthService;
+import com.rj.ecommerce_backend.securityconfig.services.JwtBlacklistService;
+import com.rj.ecommerce_backend.securityconfig.services.LogoutService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -2,7 +2,8 @@ package com.rj.ecommerce_backend.domain.order;
 
 import com.rj.ecommerce_backend.domain.cart.dtos.CartDTO;
 import com.rj.ecommerce_backend.domain.cart.dtos.CartItemDTO;
-import com.rj.ecommerce_backend.domain.order.dtos.AddressDTO;
+import com.rj.ecommerce_backend.domain.order.dtos.OrderCreationRequest;
+import com.rj.ecommerce_backend.domain.order.dtos.ShippingAddressDTO;
 import com.rj.ecommerce_backend.domain.order.dtos.OrderDTO;
 import com.rj.ecommerce_backend.domain.order.exceptions.OrderCancellationException;
 import com.rj.ecommerce_backend.domain.order.exceptions.OrderNotFoundException;
@@ -26,6 +27,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -49,20 +51,25 @@ public class OrderServiceImpl implements OrderService{
     private final OrderMapper orderMapper;
 
     @Override
-    public OrderDTO createOrder(Long userId, AddressDTO shippingAddress, String paymentMethod, CartDTO cartDTO) {
+    public OrderDTO createOrder(Long userId, OrderCreationRequest orderCreationRequest) {
         // Validate user access and existence
         securityContext.checkAccess(userId);
         User user = adminService.getUserForValidation(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         // Validate product stock before processing
-        validateCartAvailability(cartDTO);
+        validateCartAvailability(orderCreationRequest.cart());
 
         // Create order entity
-        Order order = createOrderEntity(user, shippingAddress, paymentMethod, cartDTO);
+        Order order = createOrderEntity(
+                user,
+                orderCreationRequest.shippingAddress(),
+                orderCreationRequest.shippingMethod(),
+                orderCreationRequest.paymentMethod(),
+                orderCreationRequest.cart());
 
         // Process order items and update inventory
-        List<OrderItem> orderItems = createOrderItems(order, cartDTO);
+        List<OrderItem> orderItems = createOrderItems(order, orderCreationRequest.cart());
         order.setOrderItems(orderItems);
 
         // Save and return
@@ -71,7 +78,9 @@ public class OrderServiceImpl implements OrderService{
     }
 
     @Override
-    public Optional<Order> getOrderById(Long orderId) {
+    public Optional<Order> getOrderByIdAdmin(Long orderId) {
+
+        securityContext.isAdmin();
 
         if (orderId == null) {
             log.warn("Attempted to retrieve order with null ID");
@@ -105,33 +114,70 @@ public class OrderServiceImpl implements OrderService{
     }
 
     @Override
-    public Page<OrderDTO> getOrdersForUser(Long userId, Pageable pageable) {
+    public Optional<Order> getOrderById(Long userId, Long orderId) {
+
         securityContext.checkAccess(userId);
-        log.debug("Fetching orders for user ID: {}", userId);
-        return orderRepository.findByUserId(userId, pageable)
+
+        if (orderId == null) {
+            log.warn("Attempted to retrieve order with null ID");
+            return Optional.empty();
+        }
+
+        Optional<Order> orderOptional = orderRepository.findById(orderId);
+
+        // Handle case where order doesn't exist
+        if (orderOptional.isEmpty()) {
+            log.info("Order not found with ID: {}", orderId);
+            return Optional.empty();
+        }
+
+        Order order = orderOptional.get();
+
+        // Check user access permissions
+        try {
+            User orderUser = order.getUser();
+            securityContext.checkAccess(orderUser.getId());
+
+            log.info("Successfully retrieved order with ID: {}", orderId);
+            return Optional.of(order);
+        } catch (AccessDeniedException e) {
+            log.warn("Access denied for order ID: {} for user", orderId);
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error retrieving order with ID: {}", orderId, e);
+            throw new OrderServiceException("Error processing order retrieval", e);
+        }
+    }
+
+    @Override
+    public Page<OrderDTO> getOrdersForUser(Pageable pageable, OrderSearchCriteria criteria) {
+
+        Specification<Order> spec = criteria.toSpecification();
+
+        securityContext.checkAccess(criteria.userId());
+        log.debug("Fetching orders for user ID: {}", criteria.userId());
+        return orderRepository.findAll(spec, pageable)
                 .map(orderMapper::toDto);
     }
 
     @Override
-    public Page<OrderDTO> getAllOrders(Pageable pageable) {
+    public Page<OrderDTO> getAllOrders(Pageable pageable, OrderSearchCriteria criteria) {
         // Verify admin permissions
         if (securityContext.isAdmin()) {
             log.warn("Unauthorized access attempt to all orders");
             throw new AccessDeniedException("Admin access required");
         }
 
-        // Fetch all orders with pagination, sorted by most recent first
-        Page<Order> orders = orderRepository.findAll(
-                PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
-                        Sort.by("createdAt").descending())
-        );
+        Specification<Order> orderSpecification = criteria.toSpecification();
+
+        Page<Order> orders = orderRepository.findAll(orderSpecification, pageable);
 
         // Convert to DTOs
         return orders.map(orderMapper::toDto);
     }
 
     @Override
-    public OrderDTO updateOrderStatus(Long orderId, String newStatus) {
+    public OrderDTO updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
 
@@ -153,11 +199,11 @@ public class OrderServiceImpl implements OrderService{
         }
 
         // Validate order status
-        if (!order.getOrderStatus().equals("PENDING")) {
+        if (!order.getOrderStatus().equals(OrderStatus.PENDING)) {
             throw new OrderCancellationException("Cannot cancel order with status: " + order.getOrderStatus());
         }
 
-        order.setOrderStatus("CANCELLED");
+        order.setOrderStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
 
         log.info("Order {} cancelled by user {}", orderId, userId);
@@ -168,7 +214,7 @@ public class OrderServiceImpl implements OrderService{
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
 
-        order.setOrderStatus("CANCELLED");
+        order.setOrderStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
 
         log.info("Order {} cancelled by admin", orderId);
@@ -181,10 +227,24 @@ public class OrderServiceImpl implements OrderService{
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+
+    // this version fetch actual product price from DB
+//    @Override
+//    public BigDecimal calculateOrderTotal(List<CartItemDTO> cartItems) {
+//        return cartItems.stream()
+//                .map(item -> {
+//                    Product product = productService.getProductEntityForValidation(item.id())
+//                            .orElseThrow(() -> new ProductNotFoundException(item.id()));
+//                    return product.getProductPrice().amount().value().multiply(BigDecimal.valueOf(item.quantity()));
+//                })
+//                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//    }
+
     private Order createOrderEntity(
             User user,
-            AddressDTO shippingAddress,
-            String paymentMethod,
+            ShippingAddressDTO shippingAddress,
+            ShippingMethod shippingMethod,
+            PaymentMethod paymentMethod,
             CartDTO cartDTO
     ) {
         Address address = new Address(
@@ -197,7 +257,8 @@ public class OrderServiceImpl implements OrderService{
         Order order = new Order();
         order.setUser(user);
         order.setShippingAddress(address);
-        order.setOrderStatus("PENDING");
+        order.setShippingMethod(shippingMethod);
+        order.setOrderStatus(OrderStatus.PENDING);
         order.setPaymentMethod(paymentMethod);
         order.setTotalPrice(calculateOrderTotal(cartDTO.cartItems()));
         order.setOrderDate(LocalDateTime.now());

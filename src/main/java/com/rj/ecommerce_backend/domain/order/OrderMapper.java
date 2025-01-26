@@ -1,6 +1,6 @@
 package com.rj.ecommerce_backend.domain.order;
 
-import com.rj.ecommerce_backend.domain.order.dtos.AddressDTO;
+import com.rj.ecommerce_backend.domain.order.dtos.ShippingAddressDTO;
 import com.rj.ecommerce_backend.domain.order.dtos.OrderDTO;
 import com.rj.ecommerce_backend.domain.order.dtos.OrderItemDTO;
 import com.rj.ecommerce_backend.domain.product.Product;
@@ -22,14 +22,24 @@ public class OrderMapper {
                 .map(this::toDto)
                 .toList();
 
-        AddressDTO addressDTO = new AddressDTO(order.getShippingAddress().street(),
+        ShippingAddressDTO addressDTO = new ShippingAddressDTO(order.getShippingAddress().street(),
                 order.getShippingAddress().city(), order.getShippingAddress().zipCode().value(),
                 order.getShippingAddress().country());
 
 
-        return new OrderDTO(order.getId(), order.getUser().getId(), orderItemDTOs, order.getTotalPrice(),
-                addressDTO, order.getPaymentMethod(), order.getPaymentTransactionId(),
-                order.getOrderDate(), order.getOrderStatus(), order.getCreatedAt(), order.getUpdatedAt());
+        return new OrderDTO(
+                order.getId(),
+                order.getUser().getId(),
+                orderItemDTOs,
+                order.getTotalPrice(),
+                addressDTO,
+                order.getShippingMethod(),
+                order.getPaymentMethod(),
+                order.getPaymentTransactionId(),
+                order.getOrderDate(),
+                order.getOrderStatus(),
+                order.getCreatedAt(),
+                order.getUpdatedAt());
     }
 
     public OrderItemDTO toDto(OrderItem orderItem) {
@@ -69,7 +79,6 @@ public class OrderMapper {
                 .paymentTransactionId(orderDTO.paymentTransactionId())
                 .orderDate(orderDTO.orderDate())
                 .orderStatus(orderDTO.orderStatus())
-                .createdAt(orderDTO.createdAt())
                 .updatedAt(orderDTO.updatedAt())
                 .build();
     }
@@ -79,12 +88,8 @@ public class OrderMapper {
             return null;
         }
 
-        // .order(orderRepository.findById(orderItemDTO.orderId()).orElse(null)) // Fetch in service
-        // .product(productRepository.findById(orderItemDTO.productId()).orElse(null))  // Fetch in service
         return OrderItem.builder()
                 .id(orderItemDTO.id())
-                // .order(orderRepository.findById(orderItemDTO.orderId()).orElse(null)) // Fetch in service
-                // .product(productRepository.findById(orderItemDTO.productId()).orElse(null))  // Fetch in service
                 .quantity(orderItemDTO.quantity())
                 .price(orderItemDTO.price())
                 .build();

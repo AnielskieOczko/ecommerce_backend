@@ -11,6 +11,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -23,6 +24,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class Order {
 
     @Id
@@ -36,22 +38,32 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
+    @Column(precision = 19, scale = 2)
     private BigDecimal totalPrice;
 
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "street", column = @Column(name = "address_street")),
             @AttributeOverride(name = "city", column = @Column(name = "address_city")),
-            @AttributeOverride(name = "zipCode", column = @Column(name = "address_zip_code")),
+            @AttributeOverride(name = "zipCode.value", column = @Column(name = "address_zip_code")),
             @AttributeOverride(name = "country", column = @Column(name = "address_country"))
     })
     private Address shippingAddress;
 
-    private String paymentMethod;
+    @Enumerated(EnumType.STRING)
+    private ShippingMethod shippingMethod;
+
+    @Enumerated(EnumType.STRING)
+    private PaymentMethod paymentMethod;
+
+    @Column(nullable = true)
     private String paymentTransactionId;
 
+    @CreationTimestamp
     private LocalDateTime orderDate;
-    private String orderStatus;
+
+    @Enumerated(EnumType.STRING)
+    private OrderStatus orderStatus;
 
 
     @CreationTimestamp

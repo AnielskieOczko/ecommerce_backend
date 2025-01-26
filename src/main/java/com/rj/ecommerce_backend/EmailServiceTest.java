@@ -2,6 +2,8 @@ package com.rj.ecommerce_backend;
 
 import com.rj.ecommerce_backend.domain.order.Order;
 import com.rj.ecommerce_backend.domain.order.OrderItem;
+import com.rj.ecommerce_backend.domain.order.OrderStatus;
+import com.rj.ecommerce_backend.domain.order.PaymentMethod;
 import com.rj.ecommerce_backend.domain.user.User;
 import com.rj.ecommerce_backend.domain.user.valueobject.Address;
 import com.rj.ecommerce_backend.domain.user.valueobject.Email;
@@ -41,10 +43,10 @@ public class EmailServiceTest {
                         .zipCode(new ZipCode("11111"))
                         .country("USA")
                         .build())
-                .paymentMethod("Credit Card")
+                .paymentMethod(PaymentMethod.BLIK)
                 .paymentTransactionId("txn_1234567890abcdef")
                 .orderDate(LocalDateTime.now())
-                .orderStatus("Pending")
+                .orderStatus(OrderStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .createdBy("System")

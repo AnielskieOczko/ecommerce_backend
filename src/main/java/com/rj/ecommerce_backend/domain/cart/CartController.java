@@ -1,5 +1,6 @@
 package com.rj.ecommerce_backend.domain.cart;
 
+import com.rj.ecommerce_backend.EmailServiceTest;
 import com.rj.ecommerce_backend.domain.cart.dtos.CartDTO;
 import com.rj.ecommerce_backend.domain.cart.dtos.CartItemRequest;
 import com.rj.ecommerce_backend.securityconfig.SecurityContextImpl;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 public class CartController {
 
     private final CartService cartService;
+    private final EmailServiceTest emailServiceTest;
 
     @GetMapping
     public ResponseEntity<CartDTO> getUserCart(@RequestParam Long userId) {
@@ -25,6 +27,7 @@ public class CartController {
             @RequestBody CartItemRequest cartItemRequest,
             @RequestParam(defaultValue = "1") int quantity
     ) {
+        emailServiceTest.processTestEmailMessage();
         return ResponseEntity
                 .ok(cartService.addItemToCart(userId, cartItemRequest.productId(), cartItemRequest.quantity()));
     }

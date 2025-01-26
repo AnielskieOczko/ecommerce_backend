@@ -7,10 +7,7 @@ import com.rj.ecommerce_backend.domain.user.valueobject.Password;
 import com.rj.ecommerce_backend.domain.user.valueobject.PhoneNumber;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedBy;
@@ -21,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+@Builder
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor

@@ -2,18 +2,29 @@ package com.rj.ecommerce_backend.domain.order;
 
 import com.rj.ecommerce_backend.domain.order.dtos.OrderDTO;
 import com.rj.ecommerce_backend.domain.order.dtos.StatusUpdateRequest;
+import com.rj.ecommerce_backend.domain.product.dtos.ProductResponseDTO;
+import com.rj.ecommerce_backend.domain.product.dtos.ProductSearchCriteria;
+import com.rj.ecommerce_backend.domain.sortingfiltering.OrderSortFilter;
+import com.rj.ecommerce_backend.domain.sortingfiltering.ProductSortField;
+import com.rj.ecommerce_backend.domain.sortingfiltering.SortValidator;
 import com.rj.ecommerce_backend.domain.user.dtos.UserResponseDto;
 import com.rj.ecommerce_backend.securityconfig.SecurityContext;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Slf4j
 @RestController
@@ -23,25 +34,47 @@ public class OrderAdminController {
 
     private final OrderService orderService;
     private final OrderMapper orderMapper;
-    private final SecurityContext securityContext;
+    private final SortValidator sortValidator;
 
     @GetMapping()
     public ResponseEntity<Page<OrderDTO>> getAllOrders(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) @Min(0) BigDecimal minTotal,
+            @RequestParam(required = false) @Min(0) BigDecimal maxTotal,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) PaymentMethod paymentMethod,
+            @RequestParam(required = false) Boolean hasTransactionId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sort
+            @RequestParam(defaultValue = "id:asc") String sort
     ) {
-        log.info("Received request to retrieve all users.");
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
+        log.info("Received request to retrieve all orders with filters. search={}, status={}, minTotal={}, maxTotal={}, startDate={}, endDate={}",
+                search, status, minTotal, maxTotal, startDate, endDate);
 
-        // TODO: implement search feature
-        Page<OrderDTO> orders = orderService.getAllOrders(pageable);
+        Sort validatedSort = sortValidator.validateAndBuildSort(sort, OrderSortFilter.class);
+        Pageable pageable = PageRequest.of(page, size, validatedSort);
+        OrderSearchCriteria criteria = new OrderSearchCriteria(
+                search,
+                status,
+                minTotal,
+                maxTotal,
+                startDate,
+                endDate,
+                userId,
+                paymentMethod,
+                hasTransactionId
+        );
 
-        log.info("Successfully retrieved all users.");
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(orders);
+        Page<OrderDTO> orders = orderService.getAllOrders(pageable, criteria);
+
+        log.info("Successfully retrieved all orders with filters. search={}, status={}, minTotal={}, maxTotal={}, startDate={}, endDate={}",
+                search, status, minTotal, maxTotal, startDate, endDate);
+
+        return ResponseEntity.ok(orders);
     }
 
     @GetMapping("/{orderId}")
@@ -50,21 +83,21 @@ public class OrderAdminController {
     ) {
         log.info("Retrieving order {}", orderId);
 
-        return orderService.getOrderById(orderId)
+        return orderService.getOrderByIdAdmin(orderId)
                 .map(order -> ResponseEntity.ok(orderMapper.toDto(order)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<Page<OrderDTO>> getUserOrders(
-            @PathVariable Long userId,
-            Pageable pageable
-    ) {
-        log.info("Retrieving orders for user");
-        Page<OrderDTO> orders = orderService.getOrdersForUser(userId, pageable);
-
-        return ResponseEntity.ok(orders);
-    }
+//    @GetMapping("/{userId}")
+//    public ResponseEntity<Page<OrderDTO>> getUserOrders(
+//            @PathVariable Long userId,
+//            Pageable pageable
+//    ) {
+//        log.info("Retrieving orders for user");
+//        Page<OrderDTO> orders = orderService.getOrdersForUser(userId, pageable);
+//
+//        return ResponseEntity.ok(orders);
+//    }
 
 
     @PreAuthorize("hasRole('ADMIN')")

@@ -1,7 +1,7 @@
 package com.rj.ecommerce_backend.securityconfig.utils;
 
-import com.rj.ecommerce_backend.domain.user.UserDetailsImpl;
-import com.rj.ecommerce_backend.securityconfig.JwtConfig;
+import com.rj.ecommerce_backend.user.UserDetailsImpl;
+import com.rj.ecommerce_backend.securityconfig.config.JwtConfig;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;

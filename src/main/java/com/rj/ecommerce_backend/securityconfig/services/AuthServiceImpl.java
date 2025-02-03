@@ -1,8 +1,8 @@
 package com.rj.ecommerce_backend.securityconfig.services;
 
-import com.rj.ecommerce_backend.domain.user.User;
-import com.rj.ecommerce_backend.domain.user.UserDetailsImpl;
-import com.rj.ecommerce_backend.securityconfig.RefreshToken;
+import com.rj.ecommerce_backend.user.domain.User;
+import com.rj.ecommerce_backend.user.UserDetailsImpl;
+import com.rj.ecommerce_backend.securityconfig.domain.RefreshToken;
 import com.rj.ecommerce_backend.securityconfig.dto.AuthResponse;
 import com.rj.ecommerce_backend.securityconfig.dto.JwtResponse;
 import com.rj.ecommerce_backend.securityconfig.dto.LoginRequest;

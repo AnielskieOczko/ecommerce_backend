@@ -1,6 +1,6 @@
 package com.rj.ecommerce_backend.securityconfig.services;
 
-import com.rj.ecommerce_backend.securityconfig.RefreshToken;
+import com.rj.ecommerce_backend.securityconfig.domain.RefreshToken;
 
 public interface RefreshTokenService {
 

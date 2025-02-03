@@ -1,6 +1,6 @@
 package com.rj.ecommerce_backend.securityconfig.repositories;
 
-import com.rj.ecommerce_backend.securityconfig.RefreshToken;
+import com.rj.ecommerce_backend.securityconfig.domain.RefreshToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

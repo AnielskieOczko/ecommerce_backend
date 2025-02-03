@@ -1,8 +1,8 @@
 package com.rj.ecommerce_backend.securityconfig.services;
 
-import com.rj.ecommerce_backend.domain.user.User;
-import com.rj.ecommerce_backend.domain.user.repositories.UserRepository;
-import com.rj.ecommerce_backend.securityconfig.RefreshToken;
+import com.rj.ecommerce_backend.user.domain.User;
+import com.rj.ecommerce_backend.user.repositories.UserRepository;
+import com.rj.ecommerce_backend.securityconfig.domain.RefreshToken;
 import com.rj.ecommerce_backend.securityconfig.repositories.RefreshTokenRepository;
 import com.rj.ecommerce_backend.securityconfig.exceptions.TokenRefreshException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,6 +1,5 @@
 package com.rj.ecommerce_backend.product.domain;
 
-import com.rj.ecommerce_backend.domain.product.valueobject.*;
 import com.rj.ecommerce_backend.product.valueobject.ProductDescription;
 import com.rj.ecommerce_backend.product.valueobject.ProductName;
 import com.rj.ecommerce_backend.product.valueobject.ProductPrice;
@@ -11,6 +10,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -23,6 +23,7 @@ import java.util.List;
 @Setter
 @EqualsAndHashCode
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class Product {
 
     @Id
@@ -45,6 +46,7 @@ public class Product {
     @AttributeOverride(name = "value", column = @Column(name = "quantity"))
     StockQuantity stockQuantity;
 
+    @Builder.Default
     @ManyToMany
     @JoinTable(
             name = "product_category",

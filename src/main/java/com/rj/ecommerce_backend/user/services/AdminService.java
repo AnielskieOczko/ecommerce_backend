@@ -1,7 +1,6 @@
 package com.rj.ecommerce_backend.user.services;
 
 import com.rj.ecommerce_backend.user.domain.User;
-import com.rj.ecommerce_backend.domain.user.dtos.*;
 import com.rj.ecommerce_backend.user.dtos.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

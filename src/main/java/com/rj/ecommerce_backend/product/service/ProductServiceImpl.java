@@ -1,7 +1,5 @@
 package com.rj.ecommerce_backend.product.service;
 
-import com.rj.ecommerce_backend.domain.product.dtos.*;
-import com.rj.ecommerce_backend.product.mapper.ProductMapper;
 import com.rj.ecommerce_backend.product.domain.Category;
 import com.rj.ecommerce_backend.product.domain.Image;
 import com.rj.ecommerce_backend.product.domain.Product;
@@ -13,7 +11,7 @@ import com.rj.ecommerce_backend.product.exceptions.FileStorageException;
 import com.rj.ecommerce_backend.product.exceptions.ImageNotFoundException;
 import com.rj.ecommerce_backend.product.exceptions.InsufficientStockException;
 import com.rj.ecommerce_backend.product.exceptions.ProductNotFoundException;
-import com.rj.ecommerce_backend.domain.product.valueobject.*;
+import com.rj.ecommerce_backend.product.mapper.ProductMapper;
 import com.rj.ecommerce_backend.product.repository.CategoryRepository;
 import com.rj.ecommerce_backend.product.repository.ImageRepository;
 import com.rj.ecommerce_backend.product.repository.ProductRepository;

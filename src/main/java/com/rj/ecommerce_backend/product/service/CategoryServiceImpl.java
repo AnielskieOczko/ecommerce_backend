@@ -63,7 +63,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public List<String> getCategoryNames() {
         return categoryRepository.findAll().stream()
-                .map(category -> category.name)
+                .map(Category::getName)
                 .toList();
     }
 

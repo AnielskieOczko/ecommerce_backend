@@ -7,7 +7,6 @@ import com.rj.ecommerce_backend.product.dtos.CategoryResponseDTO;
 import com.rj.ecommerce_backend.product.dtos.ImageDTO;
 import com.rj.ecommerce_backend.product.dtos.ProductCreateDTO;
 import com.rj.ecommerce_backend.product.dtos.ProductResponseDTO;
-import com.rj.ecommerce_backend.domain.product.valueobject.*;
 import com.rj.ecommerce_backend.product.repository.CategoryRepository;
 import com.rj.ecommerce_backend.product.valueobject.*;
 import org.springframework.stereotype.Component;

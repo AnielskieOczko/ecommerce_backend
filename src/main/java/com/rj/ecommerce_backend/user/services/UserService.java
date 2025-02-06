@@ -1,6 +1,5 @@
 package com.rj.ecommerce_backend.user.services;
 
-import com.rj.ecommerce_backend.domain.user.dtos.*;
 import com.rj.ecommerce_backend.securityconfig.dto.AuthResponse;
 import com.rj.ecommerce_backend.user.dtos.*;
 import jakarta.servlet.http.HttpServletRequest;

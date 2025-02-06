@@ -2,10 +2,8 @@ package com.rj.ecommerce_backend.user.mappers;
 
 import com.rj.ecommerce_backend.user.domain.Authority;
 import com.rj.ecommerce_backend.user.domain.User;
-import com.rj.ecommerce_backend.domain.user.dtos.*;
 import com.rj.ecommerce_backend.user.dtos.*;
 import com.rj.ecommerce_backend.user.repositories.UserRepository;
-import com.rj.ecommerce_backend.domain.user.valueobject.*;
 import com.rj.ecommerce_backend.user.valueobject.Address;
 import com.rj.ecommerce_backend.user.valueobject.Email;
 import com.rj.ecommerce_backend.user.valueobject.PhoneNumber;

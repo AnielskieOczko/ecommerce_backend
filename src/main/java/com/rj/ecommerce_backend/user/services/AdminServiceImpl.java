@@ -1,8 +1,8 @@
 package com.rj.ecommerce_backend.user.services;
 
+import com.rj.ecommerce_backend.securityconfig.SecurityContextImpl;
 import com.rj.ecommerce_backend.user.domain.Authority;
 import com.rj.ecommerce_backend.user.domain.User;
-import com.rj.ecommerce_backend.domain.user.dtos.*;
 import com.rj.ecommerce_backend.user.dtos.*;
 import com.rj.ecommerce_backend.user.exceptions.AuthorityNotFoundException;
 import com.rj.ecommerce_backend.user.exceptions.InvalidAuthorityUpdateException;
@@ -10,8 +10,6 @@ import com.rj.ecommerce_backend.user.exceptions.UserNotFoundException;
 import com.rj.ecommerce_backend.user.mappers.UserMapper;
 import com.rj.ecommerce_backend.user.repositories.AuthorityRepository;
 import com.rj.ecommerce_backend.user.repositories.UserRepository;
-import com.rj.ecommerce_backend.domain.user.valueobject.*;
-import com.rj.ecommerce_backend.securityconfig.SecurityContextImpl;
 import com.rj.ecommerce_backend.user.valueobject.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +21,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor

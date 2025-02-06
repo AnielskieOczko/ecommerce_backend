@@ -1,16 +1,14 @@
 package com.rj.ecommerce_backend.user.services;
 
+import com.rj.ecommerce_backend.securityconfig.SecurityContextImpl;
+import com.rj.ecommerce_backend.securityconfig.dto.AuthResponse;
+import com.rj.ecommerce_backend.securityconfig.repositories.RefreshTokenRepository;
+import com.rj.ecommerce_backend.securityconfig.services.AuthService;
 import com.rj.ecommerce_backend.user.domain.User;
-import com.rj.ecommerce_backend.domain.user.dtos.*;
 import com.rj.ecommerce_backend.user.dtos.*;
 import com.rj.ecommerce_backend.user.exceptions.UserNotFoundException;
 import com.rj.ecommerce_backend.user.mappers.UserMapper;
 import com.rj.ecommerce_backend.user.repositories.UserRepository;
-import com.rj.ecommerce_backend.domain.user.valueobject.*;
-import com.rj.ecommerce_backend.securityconfig.*;
-import com.rj.ecommerce_backend.securityconfig.dto.AuthResponse;
-import com.rj.ecommerce_backend.securityconfig.repositories.RefreshTokenRepository;
-import com.rj.ecommerce_backend.securityconfig.services.AuthService;
 import com.rj.ecommerce_backend.user.valueobject.Email;
 import com.rj.ecommerce_backend.user.valueobject.Password;
 import jakarta.servlet.http.HttpServletRequest;

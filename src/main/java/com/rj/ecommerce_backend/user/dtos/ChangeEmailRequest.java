@@ -1,6 +1,5 @@
 package com.rj.ecommerce_backend.user.dtos;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record ChangeEmailRequest(

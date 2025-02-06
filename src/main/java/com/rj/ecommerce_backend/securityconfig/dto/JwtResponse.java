@@ -1,6 +1,5 @@
 package com.rj.ecommerce_backend.securityconfig.dto;
 
-import com.rj.ecommerce_backend.securityconfig.RefreshToken;
 import lombok.Data;
 
 import java.util.List;

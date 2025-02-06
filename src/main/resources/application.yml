@@ -70,6 +70,11 @@ spring:
     secret: ${JWT_SECRET}
     expirationMs: 900000  # 15 minutes
     refresh-token-expiration: 86400000  # 24 hours
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:rabbitmq}
+    username: ${SPRING_RABBITMQ_USERNAME}
+    password: ${SPRING_RABBITMQ_PASSWORD}
+    port: 5672
   cleanup:
     cron: "0 0 * * * *"  # Run cleanup every hour
     batch-size: 1000
@@ -93,6 +98,17 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    username: ${SPRING_RABBITMQ_USERNAME}
+    password: ${SPRING_RABBITMQ_PASSWORD}
+    port: 5672
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-attempts: 3
 storage:
   location: ${user.home}/ecommerce/product-images/local
   cleanup-schedule: "0 0 * * * *"

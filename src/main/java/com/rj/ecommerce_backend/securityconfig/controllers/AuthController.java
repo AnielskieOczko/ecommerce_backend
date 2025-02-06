@@ -1,9 +1,9 @@
 package com.rj.ecommerce_backend.securityconfig.controllers;
 
-import com.rj.ecommerce_backend.domain.user.dtos.CreateUserRequest;
-import com.rj.ecommerce_backend.domain.user.dtos.UserResponseDto;
-import com.rj.ecommerce_backend.domain.user.services.AdminServiceImpl;
-import com.rj.ecommerce_backend.domain.user.services.UserService;
+import com.rj.ecommerce_backend.user.dtos.CreateUserRequest;
+import com.rj.ecommerce_backend.user.dtos.UserResponseDto;
+import com.rj.ecommerce_backend.user.services.AdminServiceImpl;
+import com.rj.ecommerce_backend.user.services.UserService;
 import com.rj.ecommerce_backend.securityconfig.dto.*;
 import com.rj.ecommerce_backend.securityconfig.exceptions.UserAuthenticationException;
 import com.rj.ecommerce_backend.securityconfig.services.AuthService;

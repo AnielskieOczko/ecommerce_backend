@@ -1,8 +1,8 @@
 package com.rj.ecommerce_backend.securityconfig;
 
-import com.rj.ecommerce_backend.domain.user.User;
-import com.rj.ecommerce_backend.domain.user.repositories.UserRepository;
-import com.rj.ecommerce_backend.domain.user.valueobject.Email;
+import com.rj.ecommerce_backend.user.domain.User;
+import com.rj.ecommerce_backend.user.repositories.UserRepository;
+import com.rj.ecommerce_backend.user.valueobject.Email;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;

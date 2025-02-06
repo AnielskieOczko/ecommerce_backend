@@ -1,13 +1,16 @@
-package com.rj.ecommerce_backend.user.services;
+package com.rj.ecommerce_backend.user.search;
 
 import com.rj.ecommerce_backend.user.domain.Authority;
 import com.rj.ecommerce_backend.user.domain.User;
 import io.micrometer.common.util.StringUtils;
 import jakarta.persistence.criteria.Join;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class UserSpecifications {
 
     public static Specification<User> withSearchCriteria(String search) {

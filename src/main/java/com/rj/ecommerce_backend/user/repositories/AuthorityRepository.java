@@ -12,6 +12,5 @@ public interface AuthorityRepository extends JpaRepository<Authority, Long> {
 
     Optional<Authority> findByName(String name);
 
-//    Set<Authority> findByNameIn(Set<Authority> authorities);
     Set<Authority> findByNameIn(Set<String> names);
 }

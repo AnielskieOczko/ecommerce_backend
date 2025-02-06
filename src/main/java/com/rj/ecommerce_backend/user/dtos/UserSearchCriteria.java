@@ -1,7 +1,7 @@
 package com.rj.ecommerce_backend.user.dtos;
 
 import com.rj.ecommerce_backend.user.domain.User;
-import com.rj.ecommerce_backend.user.services.UserSpecifications;
+import com.rj.ecommerce_backend.user.search.UserSpecifications;
 import org.springframework.data.jpa.domain.Specification;
 
 public record UserSearchCriteria(

@@ -33,7 +33,7 @@ public interface OrderService {
     // Admin only methods
     void cancelOrderAdmin(Long orderId);
 
-    // TODO: think on this method, maybe admin should also have in path {userId}
+    // TODO: admin should also have in path userId
     Optional<Order> getOrderByIdAdmin(Long orderId);
 
 }

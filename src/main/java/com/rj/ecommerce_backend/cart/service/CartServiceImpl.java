@@ -24,6 +24,10 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class CartServiceImpl implements CartService {
 
+    private static final  String USER_NOT_FOUND = "User not found with id: ";
+    private static final  String CART_NOT_FOUND = "Cart not found for user: ";
+
+
     private final UserRepository userRepository;
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
@@ -34,7 +38,7 @@ public class CartServiceImpl implements CartService {
     public CartDTO getCartForUser(Long userId) {
         securityContext.checkAccess(userId);
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND + userId));
 
         Cart cart = user.getCart();
 
@@ -67,7 +71,7 @@ public class CartServiceImpl implements CartService {
 
         // Find or create user's cart
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND + userId));
 
         Cart cart = user.getCart();
 
@@ -114,10 +118,10 @@ public class CartServiceImpl implements CartService {
 
         // Find user's cart
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND + userId));
 
         Cart cart = cartRepository.findByUser(user)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user"));
+                .orElseThrow(() -> new ResourceNotFoundException(CART_NOT_FOUND));
 
         // Find and update cart item
         CartItem cartItem = cart.getCartItems().stream()
@@ -143,10 +147,10 @@ public class CartServiceImpl implements CartService {
         securityContext.checkAccess(userId);
         // Find user's cart
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND + userId));
 
         Cart cart = cartRepository.findByUser(user)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user"));
+                .orElseThrow(() -> new ResourceNotFoundException(CART_NOT_FOUND + userId));
 
         // Find and remove cart item
         CartItem cartItemToRemove = cart.getCartItems().stream()
@@ -166,10 +170,10 @@ public class CartServiceImpl implements CartService {
         securityContext.checkAccess(userId);
         // Find user's cart
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND + userId));
 
         Cart cart = cartRepository.findByUser(user)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user"));
+                .orElseThrow(() -> new ResourceNotFoundException(CART_NOT_FOUND + userId));
 
         // Clear cart items
         cart.getCartItems().clear();

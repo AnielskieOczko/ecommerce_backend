@@ -8,6 +8,8 @@ import io.micrometer.common.util.StringUtils;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Path;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -15,6 +17,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class OrderSpecifications {
 
     private static final String PAYMENT_TRANSACTION_ID = "paymentTransactionId";

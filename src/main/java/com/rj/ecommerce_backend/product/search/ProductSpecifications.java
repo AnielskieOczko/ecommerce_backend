@@ -1,4 +1,4 @@
-package com.rj.ecommerce_backend.product.mappers;
+package com.rj.ecommerce_backend.product.search;
 
 import com.rj.ecommerce_backend.product.domain.Category;
 import com.rj.ecommerce_backend.product.domain.Product;
@@ -9,6 +9,8 @@ import io.micrometer.common.util.StringUtils;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Path;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -16,6 +18,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ProductSpecifications {
 
     public static Specification<Product> withSearchCriteria(String search) {
@@ -24,7 +27,7 @@ public class ProductSpecifications {
                 return null;
             }
 
-            Long searchId = null;
+            Long searchId;
             String searchLower = "%" + search.toLowerCase() + "%";
             log.debug("Applying product search criteria: {}", search);
 
@@ -62,9 +65,6 @@ public class ProductSpecifications {
             BigDecimal maxPrice = max != null ? max.setScale(2, RoundingMode.CEILING) : null;
 
             log.debug("Filtering by product price: min={}, max={}", minPrice, maxPrice);
-//            Path<BigDecimal> pricePath = root.get("productPrice")
-//                    .get("amount")
-//                    .get("value");
 
             Join<Product, ProductPrice> priceJoin = root.join("productPrice", JoinType.INNER);
             Join<ProductPrice, Amount> amountJoin = priceJoin.join("amount", JoinType.INNER);

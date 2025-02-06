@@ -44,7 +44,7 @@ import java.util.Optional;
 @Service
 @Transactional
 @Slf4j
-public class OrderServiceImpl implements OrderService{
+public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final SecurityContextImpl securityContext;
@@ -234,19 +234,6 @@ public class OrderServiceImpl implements OrderService{
                 .map(item -> item.price().multiply(BigDecimal.valueOf(item.quantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
-
-
-    // this version fetch actual product price from DB
-//    @Override
-//    public BigDecimal calculateOrderTotal(List<CartItemDTO> cartItems) {
-//        return cartItems.stream()
-//                .map(item -> {
-//                    Product product = productService.getProductEntityForValidation(item.id())
-//                            .orElseThrow(() -> new ProductNotFoundException(item.id()));
-//                    return product.getProductPrice().amount().value().multiply(BigDecimal.valueOf(item.quantity()));
-//                })
-//                .reduce(BigDecimal.ZERO, BigDecimal::add);
-//    }
 
     private Order createOrderEntity(
             User user,

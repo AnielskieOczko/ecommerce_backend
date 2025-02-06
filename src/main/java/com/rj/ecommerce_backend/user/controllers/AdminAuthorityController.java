@@ -32,7 +32,7 @@ public class AdminAuthorityController {
     }
 
     @PutMapping("/{authorityId}")
-    public ResponseEntity<AuthorityDto> updateAuthority(@RequestParam String newAuthName) {
+    public ResponseEntity<AuthorityDto> updateAuthority(@RequestParam String newAuthName, @PathVariable Long authorityId) {
         // TODO: impl
         return null;
     }

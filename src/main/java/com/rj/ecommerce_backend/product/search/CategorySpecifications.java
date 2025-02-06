@@ -1,13 +1,14 @@
-package com.rj.ecommerce_backend.product.mappers;
+package com.rj.ecommerce_backend.product.search;
 
 import com.rj.ecommerce_backend.product.domain.Category;
 import io.micrometer.common.util.StringUtils;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 
 @Slf4j
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class CategorySpecifications {
 
     public static Specification<Category> withSearchCriteria(String search) {

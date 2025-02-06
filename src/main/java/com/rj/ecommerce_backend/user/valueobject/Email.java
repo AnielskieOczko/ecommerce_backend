@@ -8,8 +8,4 @@ public record Email(String value) {
         return new Email(email);
     }
 
-    private static boolean isValidEmail(String email) {
-        // Add your email validation implementation here
-        return true;
-    }
 }

@@ -1,7 +1,7 @@
 package com.rj.ecommerce_backend.product.dtos;
 
 import com.rj.ecommerce_backend.product.domain.Product;
-import com.rj.ecommerce_backend.product.mappers.ProductSpecifications;
+import com.rj.ecommerce_backend.product.search.ProductSpecifications;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 import java.math.BigDecimal;

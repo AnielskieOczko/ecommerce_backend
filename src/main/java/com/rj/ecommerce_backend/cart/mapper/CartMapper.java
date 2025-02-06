@@ -5,10 +5,13 @@ import com.rj.ecommerce_backend.cart.domain.CartItem;
 import com.rj.ecommerce_backend.cart.dtos.CartDTO;
 import com.rj.ecommerce_backend.cart.dtos.CartItemDTO;
 import com.rj.ecommerce_backend.product.domain.Product;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class CartMapper {
 
     public static CartDTO toDto(Cart cart) {

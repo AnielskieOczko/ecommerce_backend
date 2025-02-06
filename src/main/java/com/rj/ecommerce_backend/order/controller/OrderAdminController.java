@@ -86,18 +86,6 @@ public class OrderAdminController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-//    @GetMapping("/{userId}")
-//    public ResponseEntity<Page<OrderDTO>> getUserOrders(
-//            @PathVariable Long userId,
-//            Pageable pageable
-//    ) {
-//        log.info("Retrieving orders for user");
-//        Page<OrderDTO> orders = orderService.getOrdersForUser(userId, pageable);
-//
-//        return ResponseEntity.ok(orders);
-//    }
-
-
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{orderId}/status")
     public ResponseEntity<OrderDTO> updateOrderStatus(

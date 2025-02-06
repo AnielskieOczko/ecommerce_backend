@@ -29,7 +29,10 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AdminServiceImpl implements AdminService{
+public class AdminServiceImpl implements AdminService {
+
+    private static final String USER_NOT_FOUND = "User not found for id: ";
+    private static final String AUTH_NOT_FOUND = "One or more authorities not found";
 
     private final UserRepository userRepository;
     private final AuthorityRepository authorityRepository;
@@ -60,7 +63,7 @@ public class AdminServiceImpl implements AdminService{
     public UserResponseDto getUserById(Long userId) {
         securityContext.checkAccess(securityContext.getCurrentUser().getId());
         return userMapper.mapToUserResponseDto(userRepository.findUserById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found for id: " + userId))) ;
+                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND + userId)));
     }
 
     @Override
@@ -71,7 +74,7 @@ public class AdminServiceImpl implements AdminService{
         Set<Authority> authorities = authorityRepository.findByNameIn(authorityNames);
 
         if (authorities.size() != authorityNames.size()) {
-            throw new AuthorityNotFoundException("One or more authorities not found");
+            throw new AuthorityNotFoundException(AUTH_NOT_FOUND);
         }
 
         User user = new User();
@@ -113,13 +116,13 @@ public class AdminServiceImpl implements AdminService{
         log.debug("Access verified for admin user: {}", currentUserId);
 
         User user = userRepository.findUserById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found for id: " + userId));
+                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND + userId));
 
         // If authorities are being updated, fetch them from repository
         if (request.authorities() != null && !request.authorities().isEmpty()) {
             Set<Authority> authorities = authorityRepository.findByNameIn(request.authorities());
             if (authorities.size() != request.authorities().size()) {
-                throw new AuthorityNotFoundException("One or more authorities not found");
+                throw new AuthorityNotFoundException(AUTH_NOT_FOUND);
             }
             user.setAuthorities(authorities);
         }
@@ -138,7 +141,7 @@ public class AdminServiceImpl implements AdminService{
         securityContext.checkAccess(securityContext.getCurrentUser().getId());
 
         User user = userRepository.findUserById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found for id: " + userId));
+                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND + userId));
 
         userRepository.delete(user);
         log.info("Successfully deleted user with id: {}", userId);
@@ -151,7 +154,7 @@ public class AdminServiceImpl implements AdminService{
         securityContext.checkAccess(securityContext.getCurrentUser().getId());
 
         User user = userRepository.findUserById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND + userId));
 
         user.setActive(request.active());
         User savedUser = userRepository.save(user);
@@ -171,12 +174,12 @@ public class AdminServiceImpl implements AdminService{
 
         // Fetch user
         User user = userRepository.findUserById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found for id: " + userId));
+                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND + userId));
 
         // Fetch all requested authorities
         Set<Authority> requestedAuthorities = authorityRepository.findByNameIn(request.authorities());
         if (requestedAuthorities.size() != request.authorities().size()) {
-            throw new AuthorityNotFoundException("One or more authorities not found");
+            throw new AuthorityNotFoundException(AUTH_NOT_FOUND);
         }
 
         // Validate request

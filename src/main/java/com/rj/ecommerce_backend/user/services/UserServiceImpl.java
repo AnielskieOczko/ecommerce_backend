@@ -26,6 +26,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
+    private static final String USER_NOT_FOUND = "User not found for id: ";
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
@@ -38,7 +40,7 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto getProfile(Long userId) {
         log.info("Getting profile data for user: {}", userId);
         User user = userRepository.findUserById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND + userId));
         securityContext.checkAccess(userId);
 
         log.info("Successfully retrieved profile data for user: {}", userId);
@@ -49,7 +51,7 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto updateBasicDetails(Long userId, UpdateBasicDetailsRequest request) {
         log.info("Updating basic details for user: {}", userId);
         User user = userRepository.findUserById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND + userId));
 
         securityContext.checkAccess(userId);
         userMapper.updateBasicInformation(user, request);
@@ -67,7 +69,7 @@ public class UserServiceImpl implements UserService {
         securityContext.checkAccess(userId);
         try {
             User user = userRepository.findUserById(userId)
-                    .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+                    .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND + userId));
 
             // Update email
             String oldEmail = user.getEmail().value();
@@ -97,7 +99,7 @@ public class UserServiceImpl implements UserService {
         securityContext.checkAccess(userId);
 
         User user = userRepository.findUserById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND + userId));
 
         if (!request.newPassword().isEmpty()) {
             String encodedPassword = passwordEncoder.encode(request.newPassword());
@@ -115,7 +117,7 @@ public class UserServiceImpl implements UserService {
         securityContext.checkAccess(userId);
 
         User user = userRepository.findUserById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND + userId));
 
         user.setActive(request.active());
         User savedUser = userRepository.save(user);
@@ -128,12 +130,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void requestPasswordReset(String email) {
-
+        // TODO: impl later
     }
 
     @Override
     public void resetPassword(String token, String newPassword) {
-
+        // TODO: impl later
     }
 
     @Override
@@ -143,7 +145,7 @@ public class UserServiceImpl implements UserService {
         securityContext.checkAccess(userId);
 
         User user = userRepository.findUserById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found for id: " + userId));
+                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND + userId));
 
         // remove refresh tokens before user account delete
         refreshTokenRepository.deleteByUserId(user.getId());

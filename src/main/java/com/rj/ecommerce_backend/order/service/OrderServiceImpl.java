@@ -2,7 +2,6 @@ package com.rj.ecommerce_backend.order.service;
 
 import com.rj.ecommerce_backend.cart.dtos.CartDTO;
 import com.rj.ecommerce_backend.cart.dtos.CartItemDTO;
-import com.rj.ecommerce_backend.domain.order.*;
 import com.rj.ecommerce_backend.order.domain.Order;
 import com.rj.ecommerce_backend.order.domain.OrderItem;
 import com.rj.ecommerce_backend.order.mapper.OrderMapper;

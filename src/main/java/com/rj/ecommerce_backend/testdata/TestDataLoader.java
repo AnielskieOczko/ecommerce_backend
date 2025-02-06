@@ -9,19 +9,17 @@ import com.rj.ecommerce_backend.product.repository.ProductRepository;
 import com.rj.ecommerce_backend.product.service.FileStorageService;
 import com.rj.ecommerce_backend.product.valueobject.*;
 import com.rj.ecommerce_backend.user.domain.Authority;
-import com.rj.ecommerce_backend.user.services.AdminServiceImpl;
-import com.rj.ecommerce_backend.user.services.AuthorityServiceImpl;
-import com.rj.ecommerce_backend.user.services.UserService;
 import com.rj.ecommerce_backend.user.dtos.AddressDto;
 import com.rj.ecommerce_backend.user.dtos.CreateUserRequest;
 import com.rj.ecommerce_backend.user.dtos.PhoneNumberDto;
+import com.rj.ecommerce_backend.user.services.AdminServiceImpl;
+import com.rj.ecommerce_backend.user.services.AuthorityServiceImpl;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,18 +39,16 @@ import java.util.*;
 @AllArgsConstructor
 public class TestDataLoader {
 
-    private final UserService userServiceImpl;
     private final AdminServiceImpl adminService;
     private final AuthorityServiceImpl authorityServiceImpl;
     private final CategoryRepository categoryRepository;
 
     private final ProductRepository productRepository;
     private final FileStorageService fileStorageService;
-    private final ResourceLoader resourceLoader; // For accessing files
-    private final String imageDirectoryPath = "src/main/resources/static/product-images/";
 
     private final PathMatchingResourcePatternResolver resourcePatternResolver;
 
+    private static final Random RANDOM = new Random();
 
     private static final String ROLE_ADMIN = "ROLE_ADMIN";
     private static final String ROLE_USER = "ROLE_USER";
@@ -72,7 +68,6 @@ public class TestDataLoader {
         log.info("Load test products");
         createInitialProducts(20);
     }
-
 
 
     @Transactional
@@ -130,7 +125,7 @@ public class TestDataLoader {
                     "password" + i,
                     userAddress,
                     userPhone,
-                    LocalDate.now().minusYears(20 + i), // Varied birth dates
+                    LocalDate.now().minusYears(20L + i), // Varied birthdays
                     Set.of(ROLE_USER)
             );
 
@@ -185,27 +180,35 @@ public class TestDataLoader {
             log.info("Found {} image resources", imageResources.length);
 
             for (int i = 1; i <= numProducts; i++) {
-                try {
-                    // Create and save the product
-                    Product savedProduct = createProduct(i, allCategories);
-
-                    // Add image if available
-                    if (imageResources.length > 0) {
-                        Resource imageResource = imageResources[(i - 1) % imageResources.length];
-                        try {
-                            addImageToProduct(savedProduct, imageResource);
-                        } catch (IOException e) {
-                            log.error("Error processing image for product {}: {}", i, e.getMessage());
-                        }
-                    }
-                } catch (Exception e) {
-                    log.error("Error creating product {}: {}", i, e.getMessage());
-                }
+                createAndSaveProduct(i, allCategories, imageResources);
             }
 
             log.info("Successfully created {} products", numProducts);
         } catch (IOException e) {
             log.error("Error loading image resources: {}", e.getMessage());
+        }
+    }
+
+    private void createAndSaveProduct(int i, List<Category> allCategories, Resource[] imageResources) {
+        try {
+            // Create and save the product
+            Product savedProduct = createProduct(i, allCategories);
+
+            // Add image if available
+            if (imageResources.length > 0) {
+                Resource imageResource = imageResources[(i - 1) % imageResources.length];
+                saveImagesForProducts(savedProduct, imageResource, i);
+            }
+        } catch (Exception e) {
+            log.error("Error creating product {}: {}", i, e.getMessage());
+        }
+    }
+
+    private void saveImagesForProducts(Product savedProduct, Resource imageResource, int i) {
+        try {
+            addImageToProduct(savedProduct, imageResource);
+        } catch (IOException e) {
+            log.error("Error processing image for product {}: {}", i, e.getMessage());
         }
     }
 
@@ -225,15 +228,13 @@ public class TestDataLoader {
     }
 
 
-
     private Category getRandomCategory(List<Category> categories) {
-        Random random = new Random();
-        return categories.get(random.nextInt(categories.size()));
+        return categories.get(RANDOM.nextInt(categories.size()));
     }
 
 
-    private void createCategoryIfNotExist (String name){
-        if (!categoryRepository.findByName(name).isPresent()) {
+    private void createCategoryIfNotExist(String name) {
+        if (categoryRepository.findByName(name).isEmpty()) {
             Category category = new Category();
             category.setName(name);
             categoryRepository.save(category);
@@ -267,6 +268,7 @@ public class TestDataLoader {
 
         @Override
         public String getName() {
+            log.debug("Getting file name");
             return name;
         }
 
@@ -296,13 +298,13 @@ public class TestDataLoader {
         }
 
         @Override
-        public InputStream getInputStream() throws IOException {
+        public InputStream getInputStream() {
             return new ByteArrayInputStream(content);
         }
 
         @Override
-        public void transferTo(File dest) throws IOException, IllegalStateException {
-            Files.write(dest.toPath(), content);
+        public void transferTo(File destination) throws IOException, IllegalStateException {
+            Files.write(destination.toPath(), content);
         }
     }
 }

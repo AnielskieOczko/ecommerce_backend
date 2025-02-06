@@ -17,6 +17,8 @@ import java.time.LocalDateTime;
 @Slf4j
 public class OrderSpecifications {
 
+    private static final String PAYMENT_TRANSACTION_ID = "paymentTransactionId";
+
     public static Specification<Order> withSearchCriteria(String search) {
         return (root, query, cb) -> {
             if (StringUtils.isBlank(search)) {
@@ -40,7 +42,7 @@ public class OrderSpecifications {
                     cb.like(cb.lower(userJoin.get("email")), searchLower),
                     cb.like(cb.lower(userJoin.get("firstName")), searchLower),
                     cb.like(cb.lower(userJoin.get("lastName")), searchLower),
-                    cb.like(cb.lower(root.get("paymentTransactionId")), searchLower)
+                    cb.like(cb.lower(root.get(PAYMENT_TRANSACTION_ID)), searchLower)
             );
         };
     }
@@ -124,8 +126,8 @@ public class OrderSpecifications {
             }
             log.debug("Filtering orders with transaction ID: {}", hasTransactionId);
             return hasTransactionId ?
-                    cb.isNotNull(root.get("paymentTransactionId")) :
-                    cb.isNull(root.get("paymentTransactionId"));
+                    cb.isNotNull(root.get(PAYMENT_TRANSACTION_ID)) :
+                    cb.isNull(root.get(PAYMENT_TRANSACTION_ID));
         };
     }
 }

@@ -22,6 +22,14 @@ storage:
   cleanup-schedule: ${STORAGE_CLEANUP_SCHEDULE}
   secret-salt: ${STORAGE_SECRET_SALT}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus,health,info,metrics # Expose prometheus, health, info, and metrics endpoints over HTTP
+  endpoint:
+    health:
+      show-details: always # Show detailed health information
 server:
   port: 8080
 

@@ -105,7 +105,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
+#    show-sql: true
   rabbitmq:
     host: ${SPRING_RABBITMQ_HOST:localhost}
     username: ${SPRING_RABBITMQ_USERNAME}

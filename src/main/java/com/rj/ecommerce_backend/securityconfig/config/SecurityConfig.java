@@ -76,6 +76,8 @@ public class SecurityConfig {
 
                 // Configure authorization rules
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/prometheus").permitAll() // Modern replacement for antMatchers - Allow /actuator/prometheus
+                        .requestMatchers("/actuator/**").hasRole("ADMIN") // Keep security for other actuator endpoints
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/api-docs", "/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/**").authenticated()

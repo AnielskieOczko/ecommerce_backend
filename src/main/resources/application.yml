@@ -137,16 +137,12 @@ spring:
       on-profile: ci
   datasource:
     url: jdbc:mysql://localhost:3306/testdb
-#    username: testuser
-#    password: testpass
-    username: ${DB_USERNAME:devuser}
-    password: ${DB_PASSWORD}
+    username: testuser
+    password: testpass
   flyway:
     url: jdbc:mysql://localhost:3306/testdb
-#    user: testuser
-#    password: testpass
-    user: ${DB_USERNAME:devuser}
-    password: ${DB_PASSWORD}
+    user: testuser
+    password: testpass
   jpa:
     hibernate:
       ddl-auto: none

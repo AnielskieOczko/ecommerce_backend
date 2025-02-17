@@ -53,7 +53,7 @@ public class TestDataLoader {
     private static final String ROLE_ADMIN = "ROLE_ADMIN";
     private static final String ROLE_USER = "ROLE_USER";
 
-    @EventListener(ApplicationReadyEvent.class)
+//    @EventListener(ApplicationReadyEvent.class)
     public void onApplicationStartUp() {
 
         log.info("Load test authorities");

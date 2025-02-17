@@ -36,3 +36,9 @@ src/main/resources/secrets.properties
 .github/workflows/backupWorking.yml
 .github/workflows/ci=cd-working2.yml
 /src/main/resources/static/product-images
+
+# Flyway ignores
+*.user.toml
+*.artifact
+report.html
+report.json

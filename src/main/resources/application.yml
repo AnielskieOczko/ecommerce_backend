@@ -13,7 +13,7 @@ spring:
   jpa:
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
+#        dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
 
 storage:
@@ -64,9 +64,13 @@ spring:
     url: ${SPRING_DATASOURCE_URL}
     username: ${DB_USERNAME:devuser}
     password: ${DB_PASSWORD}
+  flyway:
+    url: ${SPRING_DATASOURCE_URL}
+    user: ${DB_USERNAME:devuser}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: none
     show-sql: true
   logging:
     level:
@@ -102,9 +106,13 @@ spring:
     url: jdbc:mysql://localhost:${DB_PORT:3306}/${DB_NAME:ecommerce_dev}?createDatabaseIfNotExist=true
     username: ${DB_USERNAME:devuser}
     password: ${DB_PASSWORD:devpass}
+  flyway:
+    url: ${SPRING_DATASOURCE_URL}
+    user: ${DB_USERNAME:devuser}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: none
 #    show-sql: true
   rabbitmq:
     host: ${SPRING_RABBITMQ_HOST:localhost}
@@ -131,9 +139,13 @@ spring:
     url: jdbc:mysql://localhost:3306/testdb
     username: testuser
     password: testpass
+  flyway:
+    url: jdbc:mysql://localhost:3306/testdb
+    user: testuser
+    password: testpass
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: none
     show-sql: true
 storage:
   location: ${CI_STORAGE_PATH:/tmp/ecommerce/test-images}
@@ -148,6 +160,10 @@ spring:
   datasource:
     url: ${PROD_DB_URL}
     username: ${PROD_DB_USERNAME}
+    password: ${PROD_DB_PASSWORD}
+  flyway:
+    url: ${PROD_DB_URL}
+    user: ${PROD_DB_USERNAME}
     password: ${PROD_DB_PASSWORD}
   jpa:
     hibernate:

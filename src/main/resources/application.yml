@@ -136,11 +136,11 @@ spring:
     activate:
       on-profile: ci
   datasource:
-    url: jdbc:mysql://localhost:3306/testdb
+    url: jdbc:mysql://localhost:3306/ecommerce_dev
     username: testuser
     password: testpass
   flyway:
-    url: jdbc:mysql://localhost:3306/testdb
+    url: jdbc:mysql://localhost:3306/ecommerce_dev
     user: testuser
     password: testpass
   jpa:

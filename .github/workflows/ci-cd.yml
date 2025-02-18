@@ -24,8 +24,8 @@ jobs:
         env:
           MYSQL_DATABASE: ecommerce_dev
           MYSQL_USER: testuser
-          MYSQL_PASSWORD: ${{ DATABASE_PASSWORD }}
-          MYSQL_ROOT_PASSWORD: ${{ MYSQL_ROOT_PASSWORD }}
+          MYSQL_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         ports:
           - 3306:3306
         options: >-
@@ -48,7 +48,7 @@ jobs:
           SPRING_PROFILES_ACTIVE: ci
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/ecommerce_dev
           SPRING_DATASOURCE_USERNAME: testuser
-          SPRING_DATASOURCE_PASSWORD: ${{ DATABASE_PASSWORD }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
 #          DB_USERNAME: testuser  # Explicitly set DB_USERNAME
 #          DB_PASSWORD: testpass  # Explicitly set DB_PASSWORD
         #        run: mvn -B package --file pom.xml
@@ -59,7 +59,7 @@ jobs:
           SPRING_PROFILES_ACTIVE: ci
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/ecommerce_dev
           SPRING_DATASOURCE_USERNAME: testuser
-          SPRING_DATASOURCE_PASSWORD: ${{ DATABASE_PASSWORD }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
 #          DB_USERNAME: testuser  # Explicitly set DB_USERNAME
 #          DB_PASSWORD: testpass  # Explicitly set DB_PASSWORD
         run: mvn test

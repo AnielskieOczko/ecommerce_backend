@@ -4,6 +4,7 @@ import com.rj.ecommerce_backend.cart.dtos.CartDTO;
 import com.rj.ecommerce_backend.cart.dtos.CartItemDTO;
 import com.rj.ecommerce_backend.order.domain.Order;
 import com.rj.ecommerce_backend.order.domain.OrderItem;
+import com.rj.ecommerce_backend.order.enums.PaymentStatus;
 import com.rj.ecommerce_backend.order.mapper.OrderMapper;
 import com.rj.ecommerce_backend.order.search.OrderSearchCriteria;
 import com.rj.ecommerce_backend.order.dtos.OrderCreationRequest;
@@ -16,6 +17,9 @@ import com.rj.ecommerce_backend.order.exceptions.OrderCancellationException;
 import com.rj.ecommerce_backend.order.exceptions.OrderNotFoundException;
 import com.rj.ecommerce_backend.order.exceptions.OrderServiceException;
 import com.rj.ecommerce_backend.order.repository.OrderRepository;
+import com.rj.ecommerce_backend.paymentservice.PaymentIntentDTO;
+import com.rj.ecommerce_backend.paymentservice.PaymentRequestDTO;
+import com.rj.ecommerce_backend.paymentservice.PaymentServiceClient;
 import com.rj.ecommerce_backend.product.domain.Product;
 import com.rj.ecommerce_backend.product.service.ProductService;
 import com.rj.ecommerce_backend.product.exceptions.InsufficientStockException;
@@ -52,6 +56,7 @@ public class OrderServiceImpl implements OrderService {
     private final AdminService adminService;
     private final OrderMapper orderMapper;
     private final OrderEmailService orderEmailService;
+    private final PaymentServiceClient paymentServiceClient;
 
     @Override
     public OrderDTO createOrder(Long userId, OrderCreationRequest orderCreationRequest) {
@@ -75,14 +80,33 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItem> orderItems = createOrderItems(order, orderCreationRequest.cart());
         order.setOrderItems(orderItems);
 
-        // Save and return
+        // Save initial order to get ID
         Order savedOrder = orderRepository.save(order);
 
-        // send request for order email confirmation
-        orderEmailService.sendOrderConfirmationEmail(orderMapper.toDto(savedOrder));
+        // Create payment intent with more details
+        PaymentRequestDTO paymentRequest = new PaymentRequestDTO(
+                order.getTotalPrice().multiply(BigDecimal.valueOf(100)).longValue(),
+                "usd",
+                savedOrder.getId().toString(),
+                user.getEmail().value()
+        );
 
+        PaymentIntentDTO paymentIntent = paymentServiceClient.createPaymentIntent(paymentRequest);
 
-        return orderMapper.toDto(savedOrder);
+        // Update order with payment details
+        savedOrder.setPaymentTransactionId(paymentIntent.id()); // Keep for backward compatibility
+        savedOrder.setPaymentIntentId(paymentIntent.id());
+        savedOrder.setPaymentStatus(PaymentStatus.PENDING);
+        savedOrder.setOrderStatus(OrderStatus.PENDING);
+        savedOrder.setOrderDate(LocalDateTime.now());
+
+        // Save updated order
+        Order finalOrder = orderRepository.save(savedOrder);
+
+        // Send confirmation email
+        orderEmailService.sendOrderConfirmationEmail(orderMapper.toDto(finalOrder));
+
+        return orderMapper.toDto(finalOrder);
     }
 
     @Override

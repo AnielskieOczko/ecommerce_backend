@@ -2,6 +2,7 @@ package com.rj.ecommerce_backend.order.domain;
 
 import com.rj.ecommerce_backend.order.enums.OrderStatus;
 import com.rj.ecommerce_backend.order.enums.PaymentMethod;
+import com.rj.ecommerce_backend.order.enums.PaymentStatus;
 import com.rj.ecommerce_backend.order.enums.ShippingMethod;
 import com.rj.ecommerce_backend.user.domain.User;
 import com.rj.ecommerce_backend.user.valueobject.Address;
@@ -62,6 +63,12 @@ public class Order {
 
     @Column(nullable = true)
     private String paymentTransactionId;
+
+    @Column(nullable = true)
+    private String paymentIntentId;
+
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus paymentStatus;
 
     @CreationTimestamp
     private LocalDateTime orderDate;

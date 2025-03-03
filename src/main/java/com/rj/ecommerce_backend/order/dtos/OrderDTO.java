@@ -2,6 +2,7 @@ package com.rj.ecommerce_backend.order.dtos;
 
 import com.rj.ecommerce_backend.order.enums.OrderStatus;
 import com.rj.ecommerce_backend.order.enums.PaymentMethod;
+import com.rj.ecommerce_backend.order.enums.PaymentStatus;
 import com.rj.ecommerce_backend.order.enums.ShippingMethod;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -32,6 +33,9 @@ public record OrderDTO(
 
         @NotNull(message = "Payment method cannot be null")
         PaymentMethod paymentMethod,
+
+        String paymentIntentId,
+        PaymentStatus paymentStatus,
 
         String paymentTransactionId, // Nullable
 

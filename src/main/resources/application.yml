@@ -95,6 +95,8 @@ storage:
   location: ${DEV_STORAGE_PATH:/tmp/ecommerce/product-images}
   cleanup-schedule: "0 0 * * * *"  # Cleanup unused images hourly
   temp-dir: ${java.io.tmpdir}/ecommerce-uploads
+payment-service:
+  url: ${PAYMENT_SERVICE_URL:http://localhost:8010}
 
 ---
 # Local profile (for running application locally without containers)
@@ -109,7 +111,7 @@ spring:
   flyway:
     url: ${SPRING_DATASOURCE_URL}
     user: ${DB_USERNAME:devuser}
-    password: ${DB_PASSWORD}
+    password: ${DB_PASSWORD:devpass}
   jpa:
     hibernate:
       ddl-auto: none

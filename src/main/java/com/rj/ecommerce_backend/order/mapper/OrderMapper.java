@@ -30,19 +30,22 @@ public class OrderMapper {
 
 
         return new OrderDTO(
-                order.getId(),
-                order.getUser().getId(),
-                order.getUser().getEmail().value(),
-                orderItemDTOs,
-                order.getTotalPrice(),
-                addressDTO,
-                order.getShippingMethod(),
-                order.getPaymentMethod(),
-                order.getPaymentTransactionId(),
-                order.getOrderDate(),
-                order.getOrderStatus(),
-                order.getCreatedAt(),
-                order.getUpdatedAt());
+                order.getId(),                          // Long id
+                order.getUser().getId(),                // Long userId
+                order.getUser().getEmail().value(),     // String email
+                orderItemDTOs,                          // List<OrderItemDTO> orderItems
+                order.getTotalPrice(),                  // BigDecimal totalPrice
+                addressDTO,                             // ShippingAddressDTO shippingAddress
+                order.getShippingMethod(),              // ShippingMethod shippingMethod
+                order.getPaymentMethod(),               // PaymentMethod paymentMethod
+                order.getPaymentIntentId(),             // String paymentIntentId
+                order.getPaymentStatus(),               // PaymentStatus paymentStatus
+                order.getPaymentTransactionId(),        // String paymentTransactionId
+                order.getOrderDate(),                   // LocalDateTime orderDate
+                order.getOrderStatus(),                 // OrderStatus orderStatus
+                order.getCreatedAt(),                   // LocalDateTime createdAt
+                order.getUpdatedAt()                    // LocalDateTime updatedAt
+        );
     }
 
     public OrderItemDTO toDto(OrderItem orderItem) {

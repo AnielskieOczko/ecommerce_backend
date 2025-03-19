@@ -1,8 +1,8 @@
-package com.rj.ecommerce_backend.order.service;
+package com.rj.ecommerce_backend.payment.service;
 
-import com.rj.ecommerce_backend.order.dtos.OrderDTO;
-import com.rj.ecommerce_backend.messaging.email.dto.EmailRequest;
+import com.rj.ecommerce_backend.messaging.email.dto.EmailNotificationRequest;
 import com.rj.ecommerce_backend.messaging.email.producer.EmailMessageProducer;
+import com.rj.ecommerce_backend.order.dtos.OrderDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -11,10 +11,11 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
-public class OrderEmailService {
+public class OrderNotificationService {
+    // handles order notifications
     private final EmailMessageProducer emailMessageProducer;
 
     public void sendOrderConfirmationEmail(OrderDTO order) {
@@ -24,14 +25,14 @@ public class OrderEmailService {
         templateData.put("order", order);
         templateData.put("estimatedDeliveryDate", calculateEstimatedDeliveryDate(order));
 
-        EmailRequest emailRequest = EmailRequest.builder()
+        EmailNotificationRequest emailRequest = EmailNotificationRequest.builder()
                 .to(order.email())
                 .subject("Order Confirmation - Order #" + order.id())
                 .template("order-confirmation")
                 .data(templateData)
                 .build();
 
-        emailMessageProducer.sendEmail(emailRequest);
+        emailMessageProducer.sendEmail(emailRequest, order.id().toString());
     }
 
     public void sendShipmentNotificationEmail(OrderDTO order, String trackingNumber, String trackingUrl) {
@@ -43,14 +44,14 @@ public class OrderEmailService {
         templateData.put("trackingUrl", trackingUrl);
         templateData.put("estimatedDeliveryDate", calculateEstimatedDeliveryDate(order));
 
-        EmailRequest emailRequest = EmailRequest.builder()
+        EmailNotificationRequest emailRequest = EmailNotificationRequest.builder()
                 .to(order.email())
                 .subject("Your Order #" + order.id() + " Has Been Shipped!")
                 .template("order-shipment")
                 .data(templateData)
                 .build();
 
-        emailMessageProducer.sendEmail(emailRequest);
+        emailMessageProducer.sendEmail(emailRequest, order.id().toString());
     }
 
     private LocalDateTime calculateEstimatedDeliveryDate(OrderDTO order) {

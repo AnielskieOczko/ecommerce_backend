@@ -2,6 +2,9 @@ package com.rj.ecommerce_backend.order.service;
 
 import com.rj.ecommerce_backend.cart.dtos.CartDTO;
 import com.rj.ecommerce_backend.cart.dtos.CartItemDTO;
+import com.rj.ecommerce_backend.messaging.payment.dto.PaymentIntentRequestDTO;
+import com.rj.ecommerce_backend.messaging.payment.dto.PaymentIntentResponseDTO;
+import com.rj.ecommerce_backend.messaging.payment.producer.PaymentMessageProducer;
 import com.rj.ecommerce_backend.order.domain.Order;
 import com.rj.ecommerce_backend.order.domain.OrderItem;
 import com.rj.ecommerce_backend.order.enums.PaymentStatus;
@@ -17,9 +20,7 @@ import com.rj.ecommerce_backend.order.exceptions.OrderCancellationException;
 import com.rj.ecommerce_backend.order.exceptions.OrderNotFoundException;
 import com.rj.ecommerce_backend.order.exceptions.OrderServiceException;
 import com.rj.ecommerce_backend.order.repository.OrderRepository;
-import com.rj.ecommerce_backend.paymentservice.PaymentIntentDTO;
-import com.rj.ecommerce_backend.paymentservice.PaymentRequestDTO;
-import com.rj.ecommerce_backend.paymentservice.PaymentServiceClient;
+import com.rj.ecommerce_backend.payment.service.OrderNotificationService;
 import com.rj.ecommerce_backend.product.domain.Product;
 import com.rj.ecommerce_backend.product.service.ProductService;
 import com.rj.ecommerce_backend.product.exceptions.InsufficientStockException;
@@ -55,8 +56,9 @@ public class OrderServiceImpl implements OrderService {
     private final ProductService productService;
     private final AdminService adminService;
     private final OrderMapper orderMapper;
-    private final OrderEmailService orderEmailService;
-    private final PaymentServiceClient paymentServiceClient;
+    private final PaymentMessageProducer paymentMessageProducer;
+    private final OrderNotificationService orderNotificationService;
+
 
     @Override
     public OrderDTO createOrder(Long userId, OrderCreationRequest orderCreationRequest) {
@@ -84,19 +86,19 @@ public class OrderServiceImpl implements OrderService {
         Order savedOrder = orderRepository.save(order);
 
         // Create payment intent with more details
-        PaymentRequestDTO paymentRequest = new PaymentRequestDTO(
-                order.getTotalPrice().multiply(BigDecimal.valueOf(100)).longValue(),
-                "usd",
-                savedOrder.getId().toString(),
-                user.getEmail().value()
-        );
+        PaymentIntentRequestDTO paymentRequest = PaymentIntentRequestDTO.builder()
+                .orderId(savedOrder.getId().toString())
+                .amount(savedOrder.getTotalPrice().longValue())
+                .currency("PLN")
+                .customerEmail(user.getEmail().value())
+                .build();
 
-        PaymentIntentDTO paymentIntent = paymentServiceClient.createPaymentIntent(paymentRequest);
+        paymentMessageProducer.sendPaymentIntentRequest(paymentRequest, savedOrder.getId().toString());
 
         // Update order with payment details
-        savedOrder.setPaymentTransactionId(paymentIntent.id()); // Keep for backward compatibility
-        savedOrder.setPaymentIntentId(paymentIntent.id());
-        savedOrder.setPaymentStatus(PaymentStatus.PENDING);
+        savedOrder.setPaymentTransactionId(paymentRequest.orderId()); // Keep for backward compatibility
+        savedOrder.setPaymentIntentId(paymentRequest.orderId());
+        savedOrder.setPaymentStatus(PaymentStatus.PROCESSING);
         savedOrder.setOrderStatus(OrderStatus.PENDING);
         savedOrder.setOrderDate(LocalDateTime.now());
 
@@ -104,9 +106,20 @@ public class OrderServiceImpl implements OrderService {
         Order finalOrder = orderRepository.save(savedOrder);
 
         // Send confirmation email
-        orderEmailService.sendOrderConfirmationEmail(orderMapper.toDto(finalOrder));
+        orderNotificationService.sendOrderConfirmationEmail(orderMapper.toDto(finalOrder));
 
         return orderMapper.toDto(finalOrder);
+    }
+
+    @Override
+    public void updateOrderPaymentDetails(PaymentIntentResponseDTO response) {
+        Order order = orderRepository.findById(Long.valueOf(response.orderId()))
+                .orElseThrow(() -> new OrderNotFoundException(Long.valueOf(response.orderId())));
+
+        order.setPaymentTransactionId(response.paymentIntentId());
+        order.setPaymentStatus(PaymentStatus.valueOf(response.status()));
+        order.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(order);
     }
 
     @Override
@@ -258,6 +271,16 @@ public class OrderServiceImpl implements OrderService {
                 .map(item -> item.price().multiply(BigDecimal.valueOf(item.quantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
+
+    public void markOrderPaymentFailed(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
+
+        order.setPaymentStatus(PaymentStatus.FAILED);
+        order.setOrderStatus(OrderStatus.FAILED);
+        orderRepository.save(order);
+    }
+
 
     private Order createOrderEntity(
             User user,

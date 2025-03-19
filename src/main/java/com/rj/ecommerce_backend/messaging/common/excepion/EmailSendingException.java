@@ -1,4 +1,4 @@
-package com.rj.ecommerce_backend.messaging.email.excepion;
+package com.rj.ecommerce_backend.messaging.common.excepion;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

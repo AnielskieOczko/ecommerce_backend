@@ -42,3 +42,7 @@ src/main/resources/secrets.properties
 *.artifact
 report.html
 report.json
+
+# Flyway scripts
+flyway-repair.ps1
+flyway-repair-env.ps1

@@ -1,13 +1,7 @@
 package com.rj.ecommerce_backend.messaging.payment.producer;
 
-import com.rj.ecommerce_backend.messaging.common.excepion.MessagePublishException;
-import com.rj.ecommerce_backend.messaging.common.excepion.PaymentIntentException;
 import com.rj.ecommerce_backend.messaging.common.producer.AbstractMessageProducer;
-import com.rj.ecommerce_backend.messaging.payment.dto.PaymentIntentRequestDTO;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.AmqpException;
-import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 

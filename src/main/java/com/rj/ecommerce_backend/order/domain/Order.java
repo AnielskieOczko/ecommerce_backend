@@ -1,10 +1,7 @@
 package com.rj.ecommerce_backend.order.domain;
 
 
-import com.rj.ecommerce_backend.order.enums.OrderStatus;
-import com.rj.ecommerce_backend.order.enums.PaymentMethod;
-import com.rj.ecommerce_backend.order.enums.PaymentStatus;
-import com.rj.ecommerce_backend.order.enums.ShippingMethod;
+import com.rj.ecommerce_backend.order.enums.*;
 import com.rj.ecommerce_backend.user.domain.User;
 import com.rj.ecommerce_backend.user.valueobject.Address;
 import jakarta.persistence.*;
@@ -47,6 +44,11 @@ public class Order {
     @Column(precision = 19, scale = 2)
     private BigDecimal totalPrice;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+
+    private Currency currency = Currency.PLN;
+
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "street", column = @Column(name = "address_street")),
@@ -66,7 +68,7 @@ public class Order {
     private String paymentTransactionId;
 
     @Column(nullable = true)
-    private String paymentIntentId;
+    private String checkoutSessionUrl;
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;
@@ -76,7 +78,6 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
-
 
     @CreationTimestamp
     private LocalDateTime createdAt;

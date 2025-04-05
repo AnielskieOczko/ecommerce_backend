@@ -2,7 +2,7 @@ package com.rj.ecommerce_backend.payment.service;
 
 import com.rj.ecommerce_backend.messaging.email.dto.EmailNotificationRequest;
 import com.rj.ecommerce_backend.messaging.email.producer.EmailMessageProducer;
-import com.rj.ecommerce_backend.messaging.payment.dto.PaymentIntentResponseDTO;
+import com.rj.ecommerce_backend.messaging.payment.dto.CheckoutSessionResponseDTO;
 import com.rj.ecommerce_backend.order.enums.PaymentStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +18,7 @@ public class PaymentNotificationService {
 
     private final EmailMessageProducer emailMessageProducer;
 
-    public void sendPaymentNotification(PaymentIntentResponseDTO response) {
+    public void sendPaymentNotification(CheckoutSessionResponseDTO response) {
         log.info("Sending payment notification for order: {}", response.orderId());
 
         PaymentStatus status = PaymentStatus.fromStripeEvent(response.status());
@@ -31,20 +31,41 @@ public class PaymentNotificationService {
         }
     }
 
-    private void sendPaymentCancellationNotification(PaymentIntentResponseDTO response) {
+
+    private void sendPaymentCancellationNotification(CheckoutSessionResponseDTO response) {
         EmailNotificationRequest emailRequest = EmailNotificationRequest.builder()
                 .template("payment-canceled")
                 .subject("Payment Canceled - Order #" + response.orderId())
                 .data(Map.of(
                         "orderId", response.orderId(),
-                        "amount", response.amount(),
+                        "amount", response.amountTotal(),
                         "currency", response.currency()
                 ))
                 .build();
         emailMessageProducer.sendEmail(emailRequest, response.orderId());
     }
 
-    private void sendPaymentFailureNotification(PaymentIntentResponseDTO response) {
+    private void sendPaymentSuccessNotification(CheckoutSessionResponseDTO response) {
+        // Extract amount and currency from metadata if available
+        String amount = response.amountTotal().toString();
+        String currency = response.currency();
+        String customerEmail = response.customerEmail();
+
+        EmailNotificationRequest emailRequest = EmailNotificationRequest.builder()
+                .template("payment-confirmation")
+                .subject("Payment Confirmed - Order #" + response.orderId())
+                .data(Map.of(
+                        "orderId", response.orderId(),
+                        "amount", amount,
+                        "currency", currency,
+                        "customerEmail", customerEmail
+                ))
+                .build();
+
+        emailMessageProducer.sendEmail(emailRequest, response.orderId());
+    }
+
+    private void sendPaymentFailureNotification(CheckoutSessionResponseDTO response) {
         EmailNotificationRequest emailRequest = EmailNotificationRequest.builder()
                 .template("payment-failed-customer")
                 .subject("Payment Failed - Order #" + response.orderId())
@@ -58,21 +79,7 @@ public class PaymentNotificationService {
         emailMessageProducer.sendEmail(emailRequest, response.orderId());
     }
 
-    private void sendPaymentSuccessNotification(PaymentIntentResponseDTO response) {
-        EmailNotificationRequest emailRequest = EmailNotificationRequest.builder()
-                .template("payment-confirmation")
-                .subject("Payment Confirmed - Order #" + response.orderId())
-                .data(Map.of(
-                        "orderId", response.orderId(),
-                        "amount", response.amount(),
-                        "currency", response.currency()
-                ))
-                .build();
-
-        emailMessageProducer.sendEmail(emailRequest, response.orderId());
-    }
-
-    public void sendPaymentErrorNotification(PaymentIntentResponseDTO response, Exception e) {
+    public void sendPaymentErrorNotification(CheckoutSessionResponseDTO response, Exception e) {
         // Admin notification with technical details
         EmailNotificationRequest adminNotification = EmailNotificationRequest.builder()
                 .template("payment-error-admin")
@@ -80,7 +87,7 @@ public class PaymentNotificationService {
                 .data(Map.of(
                         "orderId", response.orderId(),
                         "errorMessage", e.getMessage(),
-                        "paymentIntentId", response.paymentIntentId(),
+                        "sessionId", response.sessionId(),
                         "timestamp", LocalDateTime.now()
                 ))
                 .build();

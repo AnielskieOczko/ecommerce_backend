@@ -1,6 +1,7 @@
 package com.rj.ecommerce_backend.payment.service;
 
-import com.rj.ecommerce_backend.messaging.payment.dto.PaymentIntentResponseDTO;
+
+import com.rj.ecommerce_backend.messaging.payment.dto.CheckoutSessionResponseDTO;
 import com.rj.ecommerce_backend.order.service.OrderService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -10,16 +11,16 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class PaymentProcessingService {
+public class PaymentWebhookService {
 
     private final OrderService orderService;
     private final PaymentNotificationService paymentNotificationService;
 
     @Transactional
-    public void processPaymentResponse(PaymentIntentResponseDTO response) {
+    public void processCheckoutSessionResponse(CheckoutSessionResponseDTO response) {
         try {
             // Update order status
-            orderService.updateOrderPaymentDetails(response);
+            orderService.updateOrderWithCheckoutSession(response);
 
             // Handle notifications based on payment status
             paymentNotificationService.sendPaymentNotification(response);
@@ -31,13 +32,16 @@ public class PaymentProcessingService {
         }
     }
 
-    private void handleProcessingError(PaymentIntentResponseDTO response, Exception e) {
+    @Transactional
+    private void handleProcessingError(CheckoutSessionResponseDTO response, Exception e) {
         try {
-            orderService.updateOrderPaymentDetails(response);
+            orderService.updateOrderWithCheckoutSession(response);
             paymentNotificationService.sendPaymentErrorNotification(response, e);
         } catch (Exception notificationError) {
             log.error("Failed to handle payment processing error for order {}",
                     response.orderId(), notificationError);
         }
     }
+
+
 }

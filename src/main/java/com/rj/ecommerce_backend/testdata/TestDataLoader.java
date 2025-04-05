@@ -56,8 +56,8 @@ public class TestDataLoader {
 //    @EventListener(ApplicationReadyEvent.class)
     public void onApplicationStartUp() {
 
-        log.info("Load test authorities");
-        loadAuthorities();
+//        log.info("Load test authorities");
+//        loadAuthorities();
 
         log.info("Load test users");
         loadUsers();

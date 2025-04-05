@@ -2,20 +2,15 @@ package com.rj.ecommerce_backend.order.service;
 
 import com.rj.ecommerce_backend.cart.dtos.CartDTO;
 import com.rj.ecommerce_backend.cart.dtos.CartItemDTO;
-import com.rj.ecommerce_backend.messaging.payment.dto.PaymentIntentRequestDTO;
-import com.rj.ecommerce_backend.messaging.payment.dto.PaymentIntentResponseDTO;
-import com.rj.ecommerce_backend.messaging.payment.producer.PaymentMessageProducer;
+import com.rj.ecommerce_backend.messaging.payment.dto.CheckoutSessionResponseDTO;
 import com.rj.ecommerce_backend.order.domain.Order;
 import com.rj.ecommerce_backend.order.domain.OrderItem;
-import com.rj.ecommerce_backend.order.enums.PaymentStatus;
+import com.rj.ecommerce_backend.order.enums.*;
 import com.rj.ecommerce_backend.order.mapper.OrderMapper;
 import com.rj.ecommerce_backend.order.search.OrderSearchCriteria;
 import com.rj.ecommerce_backend.order.dtos.OrderCreationRequest;
 import com.rj.ecommerce_backend.order.dtos.ShippingAddressDTO;
 import com.rj.ecommerce_backend.order.dtos.OrderDTO;
-import com.rj.ecommerce_backend.order.enums.OrderStatus;
-import com.rj.ecommerce_backend.order.enums.PaymentMethod;
-import com.rj.ecommerce_backend.order.enums.ShippingMethod;
 import com.rj.ecommerce_backend.order.exceptions.OrderCancellationException;
 import com.rj.ecommerce_backend.order.exceptions.OrderNotFoundException;
 import com.rj.ecommerce_backend.order.exceptions.OrderServiceException;
@@ -31,6 +26,8 @@ import com.rj.ecommerce_backend.user.services.AdminService;
 import com.rj.ecommerce_backend.user.valueobject.Address;
 import com.rj.ecommerce_backend.user.valueobject.ZipCode;
 import com.rj.ecommerce_backend.securityconfig.SecurityContextImpl;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,82 +44,44 @@ import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
-@Transactional
 @Slf4j
 public class OrderServiceImpl implements OrderService {
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private final OrderRepository orderRepository;
     private final SecurityContextImpl securityContext;
     private final ProductService productService;
     private final AdminService adminService;
     private final OrderMapper orderMapper;
-    private final PaymentMessageProducer paymentMessageProducer;
     private final OrderNotificationService orderNotificationService;
 
-
     @Override
+    @Transactional
     public OrderDTO createOrder(Long userId, OrderCreationRequest orderCreationRequest) {
-        // Validate user access and existence
-        securityContext.checkAccess(userId);
-        User user = adminService.getUserForValidation(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        // First create and save the order to get an ID
+        try {
+            Order order = createInitialOrder(userId, orderCreationRequest);
 
-        // Validate product stock before processing
-        validateCartAvailability(orderCreationRequest.cart());
+            // Add order items
+            List<OrderItem> orderItems = createOrderItems(order, orderCreationRequest.cart());
+            order.setOrderItems(orderItems);
 
-        // Create order entity
-        Order order = createOrderEntity(
-                user,
-                orderCreationRequest.shippingAddress(),
-                orderCreationRequest.shippingMethod(),
-                orderCreationRequest.paymentMethod(),
-                orderCreationRequest.cart());
+            // Send notification
+            orderNotificationService.sendOrderConfirmationEmail(orderMapper.toDto(order));
 
-        // Process order items and update inventory
-        List<OrderItem> orderItems = createOrderItems(order, orderCreationRequest.cart());
-        order.setOrderItems(orderItems);
-
-        // Save initial order to get ID
-        Order savedOrder = orderRepository.save(order);
-
-        // Create payment intent with more details
-        PaymentIntentRequestDTO paymentRequest = PaymentIntentRequestDTO.builder()
-                .orderId(savedOrder.getId().toString())
-                .amount(savedOrder.getTotalPrice().longValue())
-                .currency("PLN")
-                .customerEmail(user.getEmail().value())
-                .build();
-
-        paymentMessageProducer.sendPaymentIntentRequest(paymentRequest, savedOrder.getId().toString());
-
-        // Update order with payment details
-        savedOrder.setPaymentTransactionId(paymentRequest.orderId()); // Keep for backward compatibility
-        savedOrder.setPaymentIntentId(paymentRequest.orderId());
-        savedOrder.setPaymentStatus(PaymentStatus.PROCESSING);
-        savedOrder.setOrderStatus(OrderStatus.PENDING);
-        savedOrder.setOrderDate(LocalDateTime.now());
-
-        // Save updated order
-        Order finalOrder = orderRepository.save(savedOrder);
-
-        // Send confirmation email
-        orderNotificationService.sendOrderConfirmationEmail(orderMapper.toDto(finalOrder));
-
-        return orderMapper.toDto(finalOrder);
+            return orderMapper.toDto(order);
+        } catch (Exception e) {
+            log.error("Error creating order for user {}", userId, e);
+            throw new OrderServiceException("Error creating order", e);
+        }
     }
 
-    @Override
-    public void updateOrderPaymentDetails(PaymentIntentResponseDTO response) {
-        Order order = orderRepository.findById(Long.valueOf(response.orderId()))
-                .orElseThrow(() -> new OrderNotFoundException(Long.valueOf(response.orderId())));
 
-        order.setPaymentTransactionId(response.paymentIntentId());
-        order.setPaymentStatus(PaymentStatus.valueOf(response.status()));
-        order.setUpdatedAt(LocalDateTime.now());
-        orderRepository.save(order);
-    }
 
     @Override
+    @Transactional
     public Optional<Order> getOrderByIdAdmin(Long orderId) {
 
         securityContext.isAdmin();
@@ -159,6 +118,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public Optional<Order> getOrderById(Long userId, Long orderId) {
 
         securityContext.checkAccess(userId);
@@ -178,23 +138,11 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = orderOptional.get();
 
-        // Check user access permissions
-        try {
-            User orderUser = order.getUser();
-            securityContext.checkAccess(orderUser.getId());
-
-            log.info("Successfully retrieved order with ID: {}", orderId);
-            return Optional.of(order);
-        } catch (AccessDeniedException e) {
-            log.warn("Access denied for order ID: {} for user", orderId);
-            throw e;
-        } catch (Exception e) {
-            log.error("Unexpected error retrieving order with ID: {}", orderId, e);
-            throw new OrderServiceException("Error processing order retrieval", e);
-        }
+        return Optional.of(order);
     }
 
     @Override
+    @Transactional
     public Page<OrderDTO> getOrdersForUser(Pageable pageable, OrderSearchCriteria criteria) {
 
         Specification<Order> spec = criteria.toSpecification();
@@ -206,6 +154,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public Page<OrderDTO> getAllOrders(Pageable pageable, OrderSearchCriteria criteria) {
         // Verify admin permissions
         if (securityContext.isAdmin()) {
@@ -222,6 +171,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public OrderDTO updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
@@ -234,6 +184,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public void cancelOrder(Long userId, Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
@@ -255,6 +206,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public void cancelOrderAdmin(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
@@ -266,6 +218,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public BigDecimal calculateOrderTotal(List<CartItemDTO> cartItems) {
         return cartItems.stream()
                 .map(item -> item.price().multiply(BigDecimal.valueOf(item.quantity())))
@@ -281,6 +234,70 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.save(order);
     }
 
+    @Override
+    @Transactional
+    public void updateOrderWithCheckoutSession(CheckoutSessionResponseDTO response) {
+        Long orderId = Long.valueOf(response.orderId());
+        String sessionId = response.sessionId();
+        String sessionUrl = response.checkoutUrl();
+        String paymentStatus = response.paymentStatus();
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
+
+        order.setPaymentTransactionId(sessionId);
+        order.setPaymentStatus(PaymentStatus.fromStripeEvent(response.status()));
+        order.setCheckoutSessionUrl(sessionUrl);
+        order.setPaymentStatus(PaymentStatus.fromStripeEvent(paymentStatus));
+
+        order.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(order);
+
+        log.info("Updated order {} with checkout session {}, URL: {}", orderId, sessionId, sessionUrl);
+    }
+
+    public void updatePaymentDetailsOnInitiation(Order order) {
+        // Update payment fields
+        order.setPaymentTransactionId(order.getId().toString());
+        order.setCheckoutSessionUrl(order.getId().toString());
+        order.setPaymentStatus(PaymentStatus.PROCESSING);
+        order.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(order);
+    }
+    @Transactional
+    private Order createInitialOrder(Long userId, OrderCreationRequest request) {
+        // Validate user access and existence
+        securityContext.checkAccess(userId);
+        User user = adminService.getUserForValidation(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        // Validate product stock before processing
+        validateCartAvailability(request.cart());
+
+        // Create order entity
+        Order order = createOrderEntity(
+                user,
+                request.shippingAddress(),
+                request.shippingMethod(),
+                request.paymentMethod(),
+                request.cart());
+
+        // Set initial status
+        order.setPaymentStatus(PaymentStatus.PROCESSING);
+        order.setOrderStatus(OrderStatus.PENDING);
+        order.setOrderDate(LocalDateTime.now());
+        order.setUpdatedAt(LocalDateTime.now());
+        order.setLastModifiedBy(user.getEmail().value());
+
+        Order savedOrder = orderRepository.save(order);
+
+        // Detach order from persistence context after initial save.
+        // Prevents Hibernate's merge process in processPaymentForOrder from causing
+        // ImmutableCollectionException due to persistence context conflicts across transactions.
+        entityManager.detach(savedOrder);
+        // Save and return
+        return savedOrder;
+    }
 
     private Order createOrderEntity(
             User user,
@@ -289,21 +306,27 @@ public class OrderServiceImpl implements OrderService {
             PaymentMethod paymentMethod,
             CartDTO cartDTO
     ) {
-        Address address = new Address(
+        Order order = new Order();
+        order.setUser(user);
+        order.setCreatedBy(user.getEmail().value());
+
+
+        // Create Address from DTO
+        Address deliveryAddress = new Address(
                 shippingAddress.street(),
                 shippingAddress.city(),
                 new ZipCode(shippingAddress.zipCode()),
                 shippingAddress.country()
         );
 
-        Order order = new Order();
-        order.setUser(user);
-        order.setShippingAddress(address);
+        order.setShippingAddress(deliveryAddress);
         order.setShippingMethod(shippingMethod);
-        order.setOrderStatus(OrderStatus.PENDING);
         order.setPaymentMethod(paymentMethod);
-        order.setTotalPrice(calculateOrderTotal(cartDTO.cartItems()));
-        order.setOrderDate(LocalDateTime.now());
+
+        // Calculate total price
+        BigDecimal totalPrice = calculateOrderTotal(cartDTO.cartItems());
+        order.setCurrency(Currency.PLN);
+        order.setTotalPrice(totalPrice);
 
         return order;
     }

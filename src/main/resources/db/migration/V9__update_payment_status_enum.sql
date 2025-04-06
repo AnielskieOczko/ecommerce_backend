@@ -1,0 +1,11 @@
+ALTER TABLE orders 
+MODIFY COLUMN payment_status ENUM(
+    'CREATED',
+    'PROCESSING',
+    'REQUIRES_ACTION',
+    'SUCCEEDED',
+    'FAILED',
+    'CANCELED',
+    'REFUNDED',
+    'ERROR'
+) DEFAULT NULL;

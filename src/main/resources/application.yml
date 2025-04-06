@@ -115,7 +115,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: true
+    show-sql: false
   rabbitmq:
     host: ${SPRING_RABBITMQ_HOST:localhost}
     username: ${SPRING_RABBITMQ_USERNAME}

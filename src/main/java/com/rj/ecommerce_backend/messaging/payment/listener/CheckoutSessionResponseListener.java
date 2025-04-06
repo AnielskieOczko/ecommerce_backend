@@ -18,8 +18,8 @@ public class CheckoutSessionResponseListener {
 
     @RabbitListener(queues = CHECKOUT_SESSION_RESPONSE_QUEUE)
     public void handleCheckoutSessionResponse(CheckoutSessionResponseDTO response) {
-        log.info("Received checkout session response for order: {}, status: {}",
-                response.orderId(), response.status());
+        log.info("Received checkout session response for order: {}, session status: {}, payment status: {}",
+                response.orderId(), response.sessionStatus(), response.paymentStatus());
 
         try {
             // Process the checkout session response directly

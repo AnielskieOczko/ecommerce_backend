@@ -1,22 +1,86 @@
 package com.rj.ecommerce_backend.order.enums;
 
-public enum PaymentStatus {
-    CREATED,            // checkout.session.created
-    PROCESSING,         // When payment is being processed
-    REQUIRES_ACTION,    // When additional customer action is needed
-    SUCCEEDED,          // checkout.session.completed or checkout.session.async_payment_succeeded
-    FAILED,             // checkout.session.expired or checkout.session.async_payment_failed
-    CANCELED,           // checkout.session.expired
-    REFUNDED,           // For future use with refund events
-    ERROR;              // For system errors during processing
 
-    public static PaymentStatus fromStripeEvent(String eventName) {
-        return switch (eventName) {
-            case "checkout.session.created" -> CREATED;
-            case "checkout.session.completed", "checkout.session.async_payment_succeeded" -> SUCCEEDED;
-            case "checkout.session.expired" -> CANCELED;
-            case "checkout.session.async_payment_failed" -> FAILED;
-            default -> throw new IllegalArgumentException("Unknown Stripe event: " + eventName);
+import lombok.Getter;
+
+/**
+ * Enum representing Stripe payment statuses.
+ * Based on Stripe's official payment and checkout session statuses.
+ * @see <a href="https://stripe.com/docs/api/charges/object#charge_object-status">Stripe Charge Status</a>
+ * @see <a href="https://stripe.com/docs/api/checkout/sessions/object#checkout_session_object-payment_status">Stripe Checkout Session Payment Status</a>
+ * @see <a href="https://stripe.com/docs/api/checkout/sessions/object#checkout_session_object-status">Stripe Checkout Session Status</a>
+ */
+@Getter
+public enum PaymentStatus {
+    // Charge statuses
+    SUCCEEDED("succeeded"),
+    PENDING("pending"),
+    FAILED("failed"),
+
+    // Checkout Session payment_status
+    PAID("paid"),
+    UNPAID("unpaid"),
+    NO_PAYMENT_REQUIRED("no_payment_required"),
+
+    // Checkout Session status
+    OPEN("open"),
+    COMPLETE("complete"),
+    EXPIRED("expired"),
+
+    // Special case
+    UNKNOWN("unknown");
+
+    private final String stripeStatus;
+
+    PaymentStatus(String stripeStatus) {
+        this.stripeStatus = stripeStatus;
+    }
+
+    /**
+     * Converts a Stripe charge status to the corresponding PaymentStatus enum.
+     */
+    public static PaymentStatus fromChargeStatus(String stripeStatus) {
+        if (stripeStatus == null || stripeStatus.isEmpty()) {
+            return UNKNOWN;
+        }
+
+        return switch (stripeStatus.toLowerCase()) {
+            case "succeeded" -> SUCCEEDED;
+            case "pending" -> PENDING;
+            case "failed" -> FAILED;
+            default -> UNKNOWN;
+        };
+    }
+
+    /**
+     * Converts a Stripe checkout session payment status to the corresponding PaymentStatus enum.
+     */
+    public static PaymentStatus fromCheckoutSessionPaymentStatus(String stripeStatus) {
+        if (stripeStatus == null || stripeStatus.isEmpty()) {
+            return UNKNOWN;
+        }
+
+        return switch (stripeStatus.toLowerCase()) {
+            case "paid" -> PAID;
+            case "unpaid" -> UNPAID;
+            case "no_payment_required" -> NO_PAYMENT_REQUIRED;
+            default -> UNKNOWN;
+        };
+    }
+
+    /**
+     * Converts a Stripe checkout session status to the corresponding PaymentStatus enum.
+     */
+    public static PaymentStatus fromCheckoutSessionStatus(String stripeStatus) {
+        if (stripeStatus == null || stripeStatus.isEmpty()) {
+            return UNKNOWN;
+        }
+
+        return switch (stripeStatus.toLowerCase()) {
+            case "open" -> OPEN;
+            case "complete" -> COMPLETE;
+            case "expired" -> EXPIRED;
+            default -> UNKNOWN;
         };
     }
 }

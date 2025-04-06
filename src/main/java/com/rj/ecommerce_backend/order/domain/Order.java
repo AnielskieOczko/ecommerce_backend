@@ -67,8 +67,11 @@ public class Order {
     @Column(nullable = true)
     private String paymentTransactionId;
 
-    @Column(nullable = true)
+    @Column(nullable = true, length = 1024)
     private String checkoutSessionUrl;
+
+    @Column(nullable = true, length = 1024)
+    private String receiptUrl;
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;

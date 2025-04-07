@@ -70,6 +70,9 @@ public class Order {
     @Column(nullable = true, length = 1024)
     private String checkoutSessionUrl;
 
+    @Column(nullable = true)
+    private LocalDateTime checkoutSessionExpiresAt;
+
     @Column(nullable = true, length = 1024)
     private String receiptUrl;
 

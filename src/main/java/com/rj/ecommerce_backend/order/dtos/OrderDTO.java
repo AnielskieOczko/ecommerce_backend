@@ -35,6 +35,8 @@ public record OrderDTO(
         @NotNull(message = "Payment method cannot be null")
         PaymentMethod paymentMethod,
         String checkoutSessionUrl,
+        LocalDateTime checkoutSessionExpiresAt,
+        String receiptUrl,
         PaymentStatus paymentStatus,
         String paymentTransactionId, // Nullable
         LocalDateTime orderDate,

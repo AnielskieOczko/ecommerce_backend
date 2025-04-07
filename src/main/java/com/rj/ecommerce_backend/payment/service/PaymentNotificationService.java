@@ -43,6 +43,7 @@ public class PaymentNotificationService {
         }
 
         EmailNotificationRequest emailRequest = EmailNotificationRequest.builder()
+                .to(response.customerEmail())
                 .template("payment-canceled")
                 .subject("Payment Canceled - Order #" + response.orderId())
                 .data(emailData)
@@ -69,6 +70,7 @@ public class PaymentNotificationService {
         }
 
         EmailNotificationRequest emailRequest = EmailNotificationRequest.builder()
+                .to(response.customerEmail())
                 .template("payment-confirmation")
                 .subject("Payment Confirmed - Order #" + response.orderId())
                 .data(emailData)
@@ -80,7 +82,7 @@ public class PaymentNotificationService {
     private void sendPaymentFailureNotification(CheckoutSessionResponseDTO response) {
         Map<String, Object> emailData = new HashMap<>();
         emailData.put("orderId", response.orderId());
-        emailData.put("retryUrl", "https://yourstore.com/orders/" + response.orderId() + "/retry-payment");
+        emailData.put("retryUrl", response.checkoutUrl());
         emailData.put("supportEmail", "support@yourstore.com");
 
         // Add any additional details that might be helpful
@@ -93,6 +95,7 @@ public class PaymentNotificationService {
         }
 
         EmailNotificationRequest emailRequest = EmailNotificationRequest.builder()
+                .to(response.customerEmail())
                 .template("payment-failed-customer")
                 .subject("Payment Failed - Order #" + response.orderId())
                 .data(emailData)
@@ -119,6 +122,7 @@ public class PaymentNotificationService {
         }
 
         EmailNotificationRequest adminNotification = EmailNotificationRequest.builder()
+                .to("admin@yourstore.com")
                 .template("payment-error-admin")
                 .subject("Payment Processing Error - Order #" + response.orderId())
                 .data(adminData)

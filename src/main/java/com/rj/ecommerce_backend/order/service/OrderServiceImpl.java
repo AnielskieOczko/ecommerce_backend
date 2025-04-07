@@ -47,9 +47,6 @@ import java.util.Optional;
 @Slf4j
 public class OrderServiceImpl implements OrderService {
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
     private final OrderRepository orderRepository;
     private final SecurityContextImpl securityContext;
     private final ProductService productService;
@@ -64,10 +61,6 @@ public class OrderServiceImpl implements OrderService {
         try {
             Order order = createInitialOrder(userId, orderCreationRequest);
 
-            // Add order items
-            List<OrderItem> orderItems = createOrderItems(order, orderCreationRequest.cart());
-            order.setOrderItems(orderItems);
-
             // Send notification
             orderNotificationService.sendOrderConfirmationEmail(orderMapper.toDto(order));
 
@@ -77,8 +70,6 @@ public class OrderServiceImpl implements OrderService {
             throw new OrderServiceException("Error creating order", e);
         }
     }
-
-
 
     @Override
     @Transactional
@@ -91,6 +82,7 @@ public class OrderServiceImpl implements OrderService {
             return Optional.empty();
         }
 
+        // Use the repository method that eagerly fetches order items
         Optional<Order> orderOptional = orderRepository.findById(orderId);
 
         // Handle case where order doesn't exist
@@ -129,6 +121,31 @@ public class OrderServiceImpl implements OrderService {
         }
 
         Optional<Order> orderOptional = orderRepository.findById(orderId);
+
+        // Handle case where order doesn't exist
+        if (orderOptional.isEmpty()) {
+            log.info("Order not found with ID: {}", orderId);
+            return Optional.empty();
+        }
+
+        Order order = orderOptional.get();
+
+        return Optional.of(order);
+    }
+
+    @Override
+    @Transactional
+    public Optional<Order> getOrderByIdWithOrderItems(Long orderId) {
+
+        Long userId = securityContext.getCurrentUser().getId();
+        securityContext.checkAccess(userId);
+
+        if (orderId == null) {
+            log.warn("Attempted to retrieve order with null ID");
+            return Optional.empty();
+        }
+
+        Optional<Order> orderOptional = orderRepository.findByIdWithOrderItems(orderId, userId);
 
         // Handle case where order doesn't exist
         if (orderOptional.isEmpty()) {
@@ -238,29 +255,61 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public void updateOrderWithCheckoutSession(CheckoutSessionResponseDTO response) {
         Long orderId = Long.valueOf(response.orderId());
-        String sessionId = response.sessionId();
-        String sessionUrl = response.checkoutUrl();
-        String paymentStatus = response.paymentStatus();
+        PaymentStatus paymentStatus = response.paymentStatus();
 
+        // Use the repository method that eagerly fetches order items
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
 
-        order.setPaymentTransactionId(sessionId);
-        order.setPaymentStatus(PaymentStatus.fromStripeEvent(response.status()));
-        order.setCheckoutSessionUrl(sessionUrl);
-        order.setPaymentStatus(PaymentStatus.fromStripeEvent(paymentStatus));
+        // Update payment status
+        order.setPaymentStatus(paymentStatus);
+
+        // Update session ID if available
+        if (response.sessionId() != null) {
+            order.setPaymentTransactionId(response.sessionId());
+        }
+
+        // Update checkout URL if available
+        if (response.checkoutUrl() != null) {
+            order.setCheckoutSessionUrl(response.checkoutUrl());
+        }
+
+        if (response.expiresAt() != null) {
+            order.setCheckoutSessionExpiresAt(response.expiresAt());
+        }
+
+        // Store receipt URL if available in additional details
+        if (response.additionalDetails() != null && response.additionalDetails().containsKey("receiptUrl")) {
+            order.setReceiptUrl(response.additionalDetails().get("receiptUrl"));
+        }
+
+        // Update order status based on payment status
+        if (paymentStatus == PaymentStatus.SUCCEEDED || paymentStatus == PaymentStatus.PAID) {
+            order.setOrderStatus(OrderStatus.CONFIRMED);
+        } else if (paymentStatus == PaymentStatus.FAILED) {
+            order.setOrderStatus(OrderStatus.FAILED);
+        }
 
         order.setUpdatedAt(LocalDateTime.now());
         orderRepository.save(order);
 
-        log.info("Updated order {} with checkout session {}, URL: {}", orderId, sessionId, sessionUrl);
+        // Log with available information
+        if (response.sessionId() != null) {
+            log.info("Updated order {} with payment status {}, session ID: {}",
+                    orderId, paymentStatus, response.sessionId());
+        } else {
+            log.info("Updated order {} with payment status {}", orderId, paymentStatus);
+        }
+
+        // Log receipt URL if available
+        if (response.additionalDetails() != null && response.additionalDetails().containsKey("receiptUrl")) {
+            log.info("Receipt URL for order {}: {}", orderId, response.additionalDetails().get("receiptUrl"));
+        }
     }
 
     public void updatePaymentDetailsOnInitiation(Order order) {
         // Update payment fields
-        order.setPaymentTransactionId(order.getId().toString());
-        order.setCheckoutSessionUrl(order.getId().toString());
-        order.setPaymentStatus(PaymentStatus.PROCESSING);
+        order.setPaymentStatus(PaymentStatus.PENDING);
         order.setUpdatedAt(LocalDateTime.now());
         orderRepository.save(order);
     }
@@ -283,20 +332,18 @@ public class OrderServiceImpl implements OrderService {
                 request.cart());
 
         // Set initial status
-        order.setPaymentStatus(PaymentStatus.PROCESSING);
+        order.setPaymentStatus(PaymentStatus.PENDING);
         order.setOrderStatus(OrderStatus.PENDING);
         order.setOrderDate(LocalDateTime.now());
         order.setUpdatedAt(LocalDateTime.now());
         order.setLastModifiedBy(user.getEmail().value());
 
-        Order savedOrder = orderRepository.save(order);
+        // Create order items
+        List<OrderItem> orderItems = createOrderItems(order, request.cart());
+        order.setOrderItems(orderItems);
 
-        // Detach order from persistence context after initial save.
-        // Prevents Hibernate's merge process in processPaymentForOrder from causing
-        // ImmutableCollectionException due to persistence context conflicts across transactions.
-        entityManager.detach(savedOrder);
         // Save and return
-        return savedOrder;
+        return orderRepository.save(order);
     }
 
     private Order createOrderEntity(

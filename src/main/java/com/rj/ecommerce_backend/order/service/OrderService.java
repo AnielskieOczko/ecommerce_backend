@@ -25,6 +25,8 @@ public interface OrderService {
 
     Optional<Order> getOrderById(Long userId, Long orderId);
 
+    Optional<Order> getOrderByIdWithOrderItems(Long orderId);
+
     Page<OrderDTO> getAllOrders(Pageable pageable, OrderSearchCriteria criteria);
 
     Page<OrderDTO> getOrdersForUser(Pageable pageable, OrderSearchCriteria criteria);

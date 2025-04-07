@@ -1,0 +1,5 @@
+INSERT INTO authorities (name, created_at)
+VALUES
+    ('ROLE_USER', CURRENT_TIMESTAMP),
+    ('ROLE_ADMIN', CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE name = VALUES(name);

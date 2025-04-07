@@ -7,7 +7,8 @@ import jakarta.validation.constraints.NotNull;
 
 public record OrderCreationRequest(
         @NotNull ShippingAddressDTO shippingAddress,
-        @NotNull PaymentMethod paymentMethod,
+        // payment method will be provided by stripe api (user select it in checkout)
+        PaymentMethod paymentMethod,
         @NotNull ShippingMethod shippingMethod,
         @NotNull CartDTO cart
 ) {

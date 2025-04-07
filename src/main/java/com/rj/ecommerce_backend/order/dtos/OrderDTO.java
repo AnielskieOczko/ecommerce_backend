@@ -2,15 +2,18 @@ package com.rj.ecommerce_backend.order.dtos;
 
 import com.rj.ecommerce_backend.order.enums.OrderStatus;
 import com.rj.ecommerce_backend.order.enums.PaymentMethod;
+import com.rj.ecommerce_backend.order.enums.PaymentStatus;
 import com.rj.ecommerce_backend.order.enums.ShippingMethod;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Builder
 public record OrderDTO(
         Long id,
 
@@ -25,16 +28,17 @@ public record OrderDTO(
 
         @Positive(message = "Total price must be positive")
         BigDecimal totalPrice,
-
+        String currency,
         ShippingAddressDTO shippingAddress,
-
         ShippingMethod shippingMethod,
 
         @NotNull(message = "Payment method cannot be null")
         PaymentMethod paymentMethod,
-
+        String checkoutSessionUrl,
+        LocalDateTime checkoutSessionExpiresAt,
+        String receiptUrl,
+        PaymentStatus paymentStatus,
         String paymentTransactionId, // Nullable
-
         LocalDateTime orderDate,
 
         @NotNull(message = "Order status cannot be null")
@@ -42,4 +46,5 @@ public record OrderDTO(
 
         LocalDateTime createdAt,
         LocalDateTime updatedAt
-) {}
+) {
+}

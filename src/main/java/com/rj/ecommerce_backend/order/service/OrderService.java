@@ -1,6 +1,7 @@
 package com.rj.ecommerce_backend.order.service;
 
 import com.rj.ecommerce_backend.cart.dtos.CartItemDTO;
+import com.rj.ecommerce_backend.messaging.payment.dto.CheckoutSessionResponseDTO;
 import com.rj.ecommerce_backend.order.domain.Order;
 import com.rj.ecommerce_backend.order.search.OrderSearchCriteria;
 import com.rj.ecommerce_backend.order.enums.OrderStatus;
@@ -15,9 +16,16 @@ import java.util.Optional;
 
 public interface OrderService {
 
+
+    void updatePaymentDetailsOnInitiation(Order order);
+
+    void updateOrderWithCheckoutSession(CheckoutSessionResponseDTO response);
+
     OrderDTO createOrder(Long userId, OrderCreationRequest orderCreationRequest);
 
     Optional<Order> getOrderById(Long userId, Long orderId);
+
+    Optional<Order> getOrderByIdWithOrderItems(Long orderId);
 
     Page<OrderDTO> getAllOrders(Pageable pageable, OrderSearchCriteria criteria);
 

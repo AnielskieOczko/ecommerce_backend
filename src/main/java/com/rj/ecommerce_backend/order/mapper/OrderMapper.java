@@ -5,6 +5,7 @@ import com.rj.ecommerce_backend.order.domain.OrderItem;
 import com.rj.ecommerce_backend.order.dtos.ShippingAddressDTO;
 import com.rj.ecommerce_backend.order.dtos.OrderDTO;
 import com.rj.ecommerce_backend.order.dtos.OrderItemDTO;
+import com.rj.ecommerce_backend.order.enums.Currency;
 import com.rj.ecommerce_backend.product.domain.Product;
 import com.rj.ecommerce_backend.user.valueobject.Address;
 import com.rj.ecommerce_backend.user.valueobject.ZipCode;
@@ -28,21 +29,26 @@ public class OrderMapper {
                 order.getShippingAddress().city(), order.getShippingAddress().zipCode().value(),
                 order.getShippingAddress().country());
 
-
-        return new OrderDTO(
-                order.getId(),
-                order.getUser().getId(),
-                order.getUser().getEmail().value(),
-                orderItemDTOs,
-                order.getTotalPrice(),
-                addressDTO,
-                order.getShippingMethod(),
-                order.getPaymentMethod(),
-                order.getPaymentTransactionId(),
-                order.getOrderDate(),
-                order.getOrderStatus(),
-                order.getCreatedAt(),
-                order.getUpdatedAt());
+        return OrderDTO.builder()
+                .id(order.getId())
+                .userId(order.getUser().getId())
+                .email(order.getUser().getEmail().value())
+                .orderItems(orderItemDTOs)
+                .totalPrice(order.getTotalPrice())
+                .currency(order.getCurrency().name())
+                .shippingAddress(addressDTO)
+                .shippingMethod(order.getShippingMethod())
+                .paymentMethod(order.getPaymentMethod())
+                .checkoutSessionUrl(order.getCheckoutSessionUrl())
+                .paymentStatus(order.getPaymentStatus())
+                .paymentTransactionId(order.getPaymentTransactionId())
+                .orderDate(order.getOrderDate())
+                .orderStatus(order.getOrderStatus())
+                .createdAt(order.getCreatedAt())
+                .updatedAt(order.getUpdatedAt())
+                .checkoutSessionExpiresAt(order.getCheckoutSessionExpiresAt())
+                .receiptUrl(order.getReceiptUrl())
+                .build();
     }
 
     public OrderItemDTO toDto(OrderItem orderItem) {
@@ -65,23 +71,28 @@ public class OrderMapper {
         }
 
         // Create Address value object from AddressDTO
-        Address shippingAddress = new Address(orderDTO.shippingAddress().street(), orderDTO.shippingAddress().city(),
-                new ZipCode(orderDTO.shippingAddress().zipCode()), orderDTO.shippingAddress().country());
+        Address shippingAddress = new Address(
+                orderDTO.shippingAddress().street(),
+                orderDTO.shippingAddress().city(),
+                new ZipCode(orderDTO.shippingAddress().zipCode()),
+                orderDTO.shippingAddress().country()
+        );
 
-        //                .user(userService.findById(orderDTO.userId())) // Fetch user in service
-        // Set the Address value object
-
-
-        // Handle orderItems in the service to manage bidirectional relationship
         return Order.builder()
                 .id(orderDTO.id())
-//                .user(userService.findById(orderDTO.userId())) // Fetch user in service
                 .totalPrice(orderDTO.totalPrice())
-                .shippingAddress(shippingAddress) // Set the Address value object
+                .currency(Currency.valueOf(orderDTO.currency()))
+                .shippingAddress(shippingAddress)
+                .shippingMethod(orderDTO.shippingMethod())
                 .paymentMethod(orderDTO.paymentMethod())
                 .paymentTransactionId(orderDTO.paymentTransactionId())
+                .checkoutSessionUrl(orderDTO.checkoutSessionUrl())
+                .checkoutSessionExpiresAt(orderDTO.checkoutSessionExpiresAt())
+                .receiptUrl(orderDTO.receiptUrl())
+                .paymentStatus(orderDTO.paymentStatus())
                 .orderDate(orderDTO.orderDate())
                 .orderStatus(orderDTO.orderStatus())
+                .createdAt(orderDTO.createdAt())
                 .updatedAt(orderDTO.updatedAt())
                 .build();
     }

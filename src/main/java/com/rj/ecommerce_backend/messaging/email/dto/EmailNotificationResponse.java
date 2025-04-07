@@ -6,7 +6,7 @@ import lombok.Builder;
 import java.time.LocalDateTime;
 
 @Builder
-public record EmailNotification(
+public record EmailNotificationResponse(
         Long orderId,
         EmailStatus status,
         LocalDateTime timestamp

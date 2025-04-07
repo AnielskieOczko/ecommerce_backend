@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Builder
-public record EmailRequest(
+public record EmailNotificationRequest(
         String to,
         String subject,
         String template,
@@ -17,20 +17,20 @@ public record EmailRequest(
 ) implements Serializable {
 
     // Canonical constructor
-    public EmailRequest {
+    public EmailNotificationRequest {
         // Validate and set default for data
         data = data == null ? new HashMap<>() : data;
     }
 
     // Builder-like constructor for easier instantiation
     @JsonCreator
-    public static EmailRequest create(
+    public static EmailNotificationRequest create(
             @JsonProperty("to") String to,
             @JsonProperty("subject") String subject,
             @JsonProperty("template") String template,
             @JsonProperty("data") Map<String, Object> data
     ) {
-        return new EmailRequest(to, subject, template, data);
+        return new EmailNotificationRequest(to, subject, template, data);
     }
 
     // Explicit serial version UID

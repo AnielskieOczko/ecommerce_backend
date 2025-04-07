@@ -2,20 +2,20 @@ package com.rj.ecommerce_backend.order.service;
 
 import com.rj.ecommerce_backend.cart.dtos.CartDTO;
 import com.rj.ecommerce_backend.cart.dtos.CartItemDTO;
+import com.rj.ecommerce_backend.messaging.payment.dto.CheckoutSessionResponseDTO;
 import com.rj.ecommerce_backend.order.domain.Order;
 import com.rj.ecommerce_backend.order.domain.OrderItem;
+import com.rj.ecommerce_backend.order.enums.*;
 import com.rj.ecommerce_backend.order.mapper.OrderMapper;
 import com.rj.ecommerce_backend.order.search.OrderSearchCriteria;
 import com.rj.ecommerce_backend.order.dtos.OrderCreationRequest;
 import com.rj.ecommerce_backend.order.dtos.ShippingAddressDTO;
 import com.rj.ecommerce_backend.order.dtos.OrderDTO;
-import com.rj.ecommerce_backend.order.enums.OrderStatus;
-import com.rj.ecommerce_backend.order.enums.PaymentMethod;
-import com.rj.ecommerce_backend.order.enums.ShippingMethod;
 import com.rj.ecommerce_backend.order.exceptions.OrderCancellationException;
 import com.rj.ecommerce_backend.order.exceptions.OrderNotFoundException;
 import com.rj.ecommerce_backend.order.exceptions.OrderServiceException;
 import com.rj.ecommerce_backend.order.repository.OrderRepository;
+import com.rj.ecommerce_backend.payment.service.OrderNotificationService;
 import com.rj.ecommerce_backend.product.domain.Product;
 import com.rj.ecommerce_backend.product.service.ProductService;
 import com.rj.ecommerce_backend.product.exceptions.InsufficientStockException;
@@ -26,6 +26,8 @@ import com.rj.ecommerce_backend.user.services.AdminService;
 import com.rj.ecommerce_backend.user.valueobject.Address;
 import com.rj.ecommerce_backend.user.valueobject.ZipCode;
 import com.rj.ecommerce_backend.securityconfig.SecurityContextImpl;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +44,6 @@ import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
-@Transactional
 @Slf4j
 public class OrderServiceImpl implements OrderService {
 
@@ -51,41 +52,27 @@ public class OrderServiceImpl implements OrderService {
     private final ProductService productService;
     private final AdminService adminService;
     private final OrderMapper orderMapper;
-    private final OrderEmailService orderEmailService;
+    private final OrderNotificationService orderNotificationService;
 
     @Override
+    @Transactional
     public OrderDTO createOrder(Long userId, OrderCreationRequest orderCreationRequest) {
-        // Validate user access and existence
-        securityContext.checkAccess(userId);
-        User user = adminService.getUserForValidation(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        // First create and save the order to get an ID
+        try {
+            Order order = createInitialOrder(userId, orderCreationRequest);
 
-        // Validate product stock before processing
-        validateCartAvailability(orderCreationRequest.cart());
+            // Send notification
+            orderNotificationService.sendOrderConfirmationEmail(orderMapper.toDto(order));
 
-        // Create order entity
-        Order order = createOrderEntity(
-                user,
-                orderCreationRequest.shippingAddress(),
-                orderCreationRequest.shippingMethod(),
-                orderCreationRequest.paymentMethod(),
-                orderCreationRequest.cart());
-
-        // Process order items and update inventory
-        List<OrderItem> orderItems = createOrderItems(order, orderCreationRequest.cart());
-        order.setOrderItems(orderItems);
-
-        // Save and return
-        Order savedOrder = orderRepository.save(order);
-
-        // send request for order email confirmation
-        orderEmailService.sendOrderConfirmationEmail(orderMapper.toDto(savedOrder));
-
-
-        return orderMapper.toDto(savedOrder);
+            return orderMapper.toDto(order);
+        } catch (Exception e) {
+            log.error("Error creating order for user {}", userId, e);
+            throw new OrderServiceException("Error creating order", e);
+        }
     }
 
     @Override
+    @Transactional
     public Optional<Order> getOrderByIdAdmin(Long orderId) {
 
         securityContext.isAdmin();
@@ -95,6 +82,7 @@ public class OrderServiceImpl implements OrderService {
             return Optional.empty();
         }
 
+        // Use the repository method that eagerly fetches order items
         Optional<Order> orderOptional = orderRepository.findById(orderId);
 
         // Handle case where order doesn't exist
@@ -122,6 +110,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public Optional<Order> getOrderById(Long userId, Long orderId) {
 
         securityContext.checkAccess(userId);
@@ -141,23 +130,36 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = orderOptional.get();
 
-        // Check user access permissions
-        try {
-            User orderUser = order.getUser();
-            securityContext.checkAccess(orderUser.getId());
-
-            log.info("Successfully retrieved order with ID: {}", orderId);
-            return Optional.of(order);
-        } catch (AccessDeniedException e) {
-            log.warn("Access denied for order ID: {} for user", orderId);
-            throw e;
-        } catch (Exception e) {
-            log.error("Unexpected error retrieving order with ID: {}", orderId, e);
-            throw new OrderServiceException("Error processing order retrieval", e);
-        }
+        return Optional.of(order);
     }
 
     @Override
+    @Transactional
+    public Optional<Order> getOrderByIdWithOrderItems(Long orderId) {
+
+        Long userId = securityContext.getCurrentUser().getId();
+        securityContext.checkAccess(userId);
+
+        if (orderId == null) {
+            log.warn("Attempted to retrieve order with null ID");
+            return Optional.empty();
+        }
+
+        Optional<Order> orderOptional = orderRepository.findByIdWithOrderItems(orderId, userId);
+
+        // Handle case where order doesn't exist
+        if (orderOptional.isEmpty()) {
+            log.info("Order not found with ID: {}", orderId);
+            return Optional.empty();
+        }
+
+        Order order = orderOptional.get();
+
+        return Optional.of(order);
+    }
+
+    @Override
+    @Transactional
     public Page<OrderDTO> getOrdersForUser(Pageable pageable, OrderSearchCriteria criteria) {
 
         Specification<Order> spec = criteria.toSpecification();
@@ -169,6 +171,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public Page<OrderDTO> getAllOrders(Pageable pageable, OrderSearchCriteria criteria) {
         // Verify admin permissions
         if (securityContext.isAdmin()) {
@@ -185,6 +188,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public OrderDTO updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
@@ -197,6 +201,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public void cancelOrder(Long userId, Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
@@ -218,6 +223,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public void cancelOrderAdmin(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
@@ -229,10 +235,115 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public BigDecimal calculateOrderTotal(List<CartItemDTO> cartItems) {
         return cartItems.stream()
                 .map(item -> item.price().multiply(BigDecimal.valueOf(item.quantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public void markOrderPaymentFailed(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
+
+        order.setPaymentStatus(PaymentStatus.FAILED);
+        order.setOrderStatus(OrderStatus.FAILED);
+        orderRepository.save(order);
+    }
+
+    @Override
+    @Transactional
+    public void updateOrderWithCheckoutSession(CheckoutSessionResponseDTO response) {
+        Long orderId = Long.valueOf(response.orderId());
+        PaymentStatus paymentStatus = response.paymentStatus();
+
+        // Use the repository method that eagerly fetches order items
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
+
+        // Update payment status
+        order.setPaymentStatus(paymentStatus);
+
+        // Update session ID if available
+        if (response.sessionId() != null) {
+            order.setPaymentTransactionId(response.sessionId());
+        }
+
+        // Update checkout URL if available
+        if (response.checkoutUrl() != null) {
+            order.setCheckoutSessionUrl(response.checkoutUrl());
+        }
+
+        if (response.expiresAt() != null) {
+            order.setCheckoutSessionExpiresAt(response.expiresAt());
+        }
+
+        // Store receipt URL if available in additional details
+        if (response.additionalDetails() != null && response.additionalDetails().containsKey("receiptUrl")) {
+            order.setReceiptUrl(response.additionalDetails().get("receiptUrl"));
+        }
+
+        // Update order status based on payment status
+        if (paymentStatus == PaymentStatus.SUCCEEDED || paymentStatus == PaymentStatus.PAID) {
+            order.setOrderStatus(OrderStatus.CONFIRMED);
+        } else if (paymentStatus == PaymentStatus.FAILED) {
+            order.setOrderStatus(OrderStatus.FAILED);
+        }
+
+        order.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(order);
+
+        // Log with available information
+        if (response.sessionId() != null) {
+            log.info("Updated order {} with payment status {}, session ID: {}",
+                    orderId, paymentStatus, response.sessionId());
+        } else {
+            log.info("Updated order {} with payment status {}", orderId, paymentStatus);
+        }
+
+        // Log receipt URL if available
+        if (response.additionalDetails() != null && response.additionalDetails().containsKey("receiptUrl")) {
+            log.info("Receipt URL for order {}: {}", orderId, response.additionalDetails().get("receiptUrl"));
+        }
+    }
+
+    public void updatePaymentDetailsOnInitiation(Order order) {
+        // Update payment fields
+        order.setPaymentStatus(PaymentStatus.PENDING);
+        order.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(order);
+    }
+    @Transactional
+    private Order createInitialOrder(Long userId, OrderCreationRequest request) {
+        // Validate user access and existence
+        securityContext.checkAccess(userId);
+        User user = adminService.getUserForValidation(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        // Validate product stock before processing
+        validateCartAvailability(request.cart());
+
+        // Create order entity
+        Order order = createOrderEntity(
+                user,
+                request.shippingAddress(),
+                request.shippingMethod(),
+                request.paymentMethod(),
+                request.cart());
+
+        // Set initial status
+        order.setPaymentStatus(PaymentStatus.PENDING);
+        order.setOrderStatus(OrderStatus.PENDING);
+        order.setOrderDate(LocalDateTime.now());
+        order.setUpdatedAt(LocalDateTime.now());
+        order.setLastModifiedBy(user.getEmail().value());
+
+        // Create order items
+        List<OrderItem> orderItems = createOrderItems(order, request.cart());
+        order.setOrderItems(orderItems);
+
+        // Save and return
+        return orderRepository.save(order);
     }
 
     private Order createOrderEntity(
@@ -242,21 +353,27 @@ public class OrderServiceImpl implements OrderService {
             PaymentMethod paymentMethod,
             CartDTO cartDTO
     ) {
-        Address address = new Address(
+        Order order = new Order();
+        order.setUser(user);
+        order.setCreatedBy(user.getEmail().value());
+
+
+        // Create Address from DTO
+        Address deliveryAddress = new Address(
                 shippingAddress.street(),
                 shippingAddress.city(),
                 new ZipCode(shippingAddress.zipCode()),
                 shippingAddress.country()
         );
 
-        Order order = new Order();
-        order.setUser(user);
-        order.setShippingAddress(address);
+        order.setShippingAddress(deliveryAddress);
         order.setShippingMethod(shippingMethod);
-        order.setOrderStatus(OrderStatus.PENDING);
         order.setPaymentMethod(paymentMethod);
-        order.setTotalPrice(calculateOrderTotal(cartDTO.cartItems()));
-        order.setOrderDate(LocalDateTime.now());
+
+        // Calculate total price
+        BigDecimal totalPrice = calculateOrderTotal(cartDTO.cartItems());
+        order.setCurrency(Currency.PLN);
+        order.setTotalPrice(totalPrice);
 
         return order;
     }

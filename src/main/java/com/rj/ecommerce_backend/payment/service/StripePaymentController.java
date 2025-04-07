@@ -1,7 +1,8 @@
 package com.rj.ecommerce_backend.payment.service;
 
 import com.rj.ecommerce_backend.order.exceptions.OrderNotFoundException;
-import com.rj.ecommerce_backend.payment.service.dto.CheckoutSessionDTO;
+import com.rj.ecommerce_backend.payment.dto.CheckoutSessionDTO;
+import com.rj.ecommerce_backend.payment.dto.PaymentStatusDTO;
 import com.rj.ecommerce_backend.securityconfig.SecurityContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,18 @@ public class StripePaymentController {
     private final SecurityContext securityContext;
     private final StripePaymentService stripePaymentService;
 
+    @GetMapping("/checkout/session/{orderId}")
+    public ResponseEntity<PaymentStatusDTO> getPaymentStatus(@PathVariable Long orderId) {
+        try {
+            log.info("Getting payment status for order: {}", orderId);
+            stripePaymentService.getOrderPaymentStatus(orderId);
+            return ResponseEntity.ok(stripePaymentService.getOrderPaymentStatus(orderId));
+        } catch (Exception e) {
+            log.error("Error getting payment status for order: {}", orderId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error getting payment status", e);
+        }
+    }
+
     @PostMapping("/checkout/session/{orderId}")
     public ResponseEntity<CheckoutSessionDTO> createOrGetCheckoutSession(
             @PathVariable Long orderId,
@@ -28,7 +41,7 @@ public class StripePaymentController {
             Long userId = securityContext.getCurrentUser().getId();
 
             // Get existing session or create new one
-            CheckoutSessionDTO sessionDTO = stripePaymentService.getOrCreateCheckoutSession(
+            CheckoutSessionDTO sessionDTO = stripePaymentService.createOrGetCheckoutSession(
                     userId,
                     orderId,
                     request.successUrl(),

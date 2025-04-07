@@ -29,24 +29,26 @@ public class OrderMapper {
                 order.getShippingAddress().city(), order.getShippingAddress().zipCode().value(),
                 order.getShippingAddress().country());
 
-        return new OrderDTO(
-                order.getId(),                          // Long id
-                order.getUser().getId(),                // Long userId
-                order.getUser().getEmail().value(),     // String email
-                orderItemDTOs,                          // List<OrderItemDTO> orderItems
-                order.getTotalPrice(),
-                order.getCurrency().name(),// BigDecimal totalPrice
-                addressDTO,                             // ShippingAddressDTO shippingAddress
-                order.getShippingMethod(),              // ShippingMethod shippingMethod
-                order.getPaymentMethod(),               // PaymentMethod paymentMethod
-                order.getCheckoutSessionUrl(),             // String CheckoutSessionUrl
-                order.getPaymentStatus(),               // PaymentStatus paymentStatus
-                order.getPaymentTransactionId(),        // String paymentTransactionId
-                order.getOrderDate(),                   // LocalDateTime orderDate
-                order.getOrderStatus(),                 // OrderStatus orderStatus
-                order.getCreatedAt(),                   // LocalDateTime createdAt
-                order.getUpdatedAt()                    // LocalDateTime updatedAt
-        );
+        return OrderDTO.builder()
+                .id(order.getId())
+                .userId(order.getUser().getId())
+                .email(order.getUser().getEmail().value())
+                .orderItems(orderItemDTOs)
+                .totalPrice(order.getTotalPrice())
+                .currency(order.getCurrency().name())
+                .shippingAddress(addressDTO)
+                .shippingMethod(order.getShippingMethod())
+                .paymentMethod(order.getPaymentMethod())
+                .checkoutSessionUrl(order.getCheckoutSessionUrl())
+                .paymentStatus(order.getPaymentStatus())
+                .paymentTransactionId(order.getPaymentTransactionId())
+                .orderDate(order.getOrderDate())
+                .orderStatus(order.getOrderStatus())
+                .createdAt(order.getCreatedAt())
+                .updatedAt(order.getUpdatedAt())
+                .checkoutSessionExpiresAt(order.getCheckoutSessionExpiresAt())
+                .receiptUrl(order.getReceiptUrl())
+                .build();
     }
 
     public OrderItemDTO toDto(OrderItem orderItem) {
@@ -69,24 +71,28 @@ public class OrderMapper {
         }
 
         // Create Address value object from AddressDTO
-        Address shippingAddress = new Address(orderDTO.shippingAddress().street(), orderDTO.shippingAddress().city(),
-                new ZipCode(orderDTO.shippingAddress().zipCode()), orderDTO.shippingAddress().country());
+        Address shippingAddress = new Address(
+                orderDTO.shippingAddress().street(),
+                orderDTO.shippingAddress().city(),
+                new ZipCode(orderDTO.shippingAddress().zipCode()),
+                orderDTO.shippingAddress().country()
+        );
 
-        //                .user(userService.findById(orderDTO.userId())) // Fetch user in service
-        // Set the Address value object
-
-
-        // Handle orderItems in the service to manage bidirectional relationship
         return Order.builder()
                 .id(orderDTO.id())
-//                .user(userService.findById(orderDTO.userId())) // Fetch user in service
                 .totalPrice(orderDTO.totalPrice())
                 .currency(Currency.valueOf(orderDTO.currency()))
-                .shippingAddress(shippingAddress) // Set the Address value object
+                .shippingAddress(shippingAddress)
+                .shippingMethod(orderDTO.shippingMethod())
                 .paymentMethod(orderDTO.paymentMethod())
                 .paymentTransactionId(orderDTO.paymentTransactionId())
+                .checkoutSessionUrl(orderDTO.checkoutSessionUrl())
+                .checkoutSessionExpiresAt(orderDTO.checkoutSessionExpiresAt())
+                .receiptUrl(orderDTO.receiptUrl())
+                .paymentStatus(orderDTO.paymentStatus())
                 .orderDate(orderDTO.orderDate())
                 .orderStatus(orderDTO.orderStatus())
+                .createdAt(orderDTO.createdAt())
                 .updatedAt(orderDTO.updatedAt())
                 .build();
     }

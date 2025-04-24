@@ -2,6 +2,10 @@ package com.rj.ecommerce_backend.order.service;
 
 import com.rj.ecommerce_backend.cart.dtos.CartDTO;
 import com.rj.ecommerce_backend.cart.dtos.CartItemDTO;
+import com.rj.ecommerce_backend.messaging.common.excepion.MessagePublishException;
+import com.rj.ecommerce_backend.messaging.email.EmailRequestFactory;
+import com.rj.ecommerce_backend.messaging.email.EmailServiceClient;
+import com.rj.ecommerce_backend.messaging.email.contract.v1.EcommerceEmailRequest;
 import com.rj.ecommerce_backend.messaging.payment.dto.CheckoutSessionResponseDTO;
 import com.rj.ecommerce_backend.order.domain.Order;
 import com.rj.ecommerce_backend.order.domain.OrderItem;
@@ -15,7 +19,6 @@ import com.rj.ecommerce_backend.order.exceptions.OrderCancellationException;
 import com.rj.ecommerce_backend.order.exceptions.OrderNotFoundException;
 import com.rj.ecommerce_backend.order.exceptions.OrderServiceException;
 import com.rj.ecommerce_backend.order.repository.OrderRepository;
-import com.rj.ecommerce_backend.payment.service.OrderNotificationService;
 import com.rj.ecommerce_backend.product.domain.Product;
 import com.rj.ecommerce_backend.product.service.ProductService;
 import com.rj.ecommerce_backend.product.exceptions.InsufficientStockException;
@@ -26,8 +29,6 @@ import com.rj.ecommerce_backend.user.services.AdminService;
 import com.rj.ecommerce_backend.user.valueobject.Address;
 import com.rj.ecommerce_backend.user.valueobject.ZipCode;
 import com.rj.ecommerce_backend.securityconfig.SecurityContextImpl;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,17 +53,26 @@ public class OrderServiceImpl implements OrderService {
     private final ProductService productService;
     private final AdminService adminService;
     private final OrderMapper orderMapper;
-    private final OrderNotificationService orderNotificationService;
+    private final EmailServiceClient emailServiceclient;
+    private final EmailRequestFactory emailRequestFactory;
+
 
     @Override
     @Transactional
     public OrderDTO createOrder(Long userId, OrderCreationRequest orderCreationRequest) {
-        // First create and save the order to get an ID
         try {
+            // First create and save the order to get an ID
             Order order = createInitialOrder(userId, orderCreationRequest);
 
-            // Send notification
-            orderNotificationService.sendOrderConfirmationEmail(orderMapper.toDto(order));
+            // Try to send notification, but don't let email failure prevent order creation
+            try {
+                EcommerceEmailRequest request = emailRequestFactory.createOrderConfirmationRequest(order);
+                emailServiceclient.sendEmailRequest(request);
+            } catch (MessagePublishException e) {
+                // Log the email failure but don't roll back the transaction
+                log.error("Failed to send order confirmation email for order ID: {}. Order was created successfully.",
+                        order.getId(), e);
+            }
 
             return orderMapper.toDto(order);
         } catch (Exception e) {

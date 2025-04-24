@@ -1,11 +1,19 @@
 package com.rj.ecommerce_backend.messaging.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -87,8 +95,26 @@ public class RabbitMQConfig {
                 .with(EMAIL_NOTIFICATION_ROUTING_KEY);
     }
 
+
+
+    /**
+     * Creates the MessageConverter using the specific rabbitObjectMapper bean.
+     */
     @Bean
-    public MessageConverter jsonMessageConverter() {
-        return new Jackson2JsonMessageConverter();
+    public MessageConverter jsonMessageConverter(
+            @Qualifier("rabbitObjectMapper") ObjectMapper rabbitObjectMapper) { // <<< Inject QUALIFIED bean
+        return new Jackson2JsonMessageConverter(rabbitObjectMapper);
+    }
+
+    /**
+     * Configures the RabbitTemplate to use the custom jsonMessageConverter.
+     * Note: Ensure the MessageConverter bean is correctly named or qualified if needed.
+     */
+    @Bean
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory,
+                                         MessageConverter jsonMessageConverter) { // Spring injects the bean defined above
+        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
+        rabbitTemplate.setMessageConverter(jsonMessageConverter);
+        return rabbitTemplate;
     }
 }

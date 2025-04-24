@@ -1,15 +1,16 @@
 package com.rj.ecommerce_backend.messaging.email.contract.v1.customer;
 
+import com.rj.ecommerce_backend.messaging.email.contract.v1.EmailRequestUtils;
 import com.rj.ecommerce_backend.messaging.email.contract.v1.EcommerceEmailRequest;
 import com.rj.ecommerce_backend.messaging.email.contract.v1.EmailTemplate;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.With;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Data Transfer Object for welcome emails to new customers
@@ -17,41 +18,30 @@ import java.util.UUID;
 @Builder
 @With
 public record WelcomeEmailRequestDTO(
-        @NonNull String messageId,
-        @NonNull String version,
-        @NonNull String to,
+        @NonNull @NotBlank String messageId,
+        @NonNull @NotBlank String version,
+        @NonNull @NotBlank String to,
         String subject,
-        @NonNull String customerName,
+        @NonNull @NotBlank String customerName,
         String couponCode,
         Map<String, Object> additionalData,
         LocalDateTime timestamp
 ) implements EcommerceEmailRequest {
 
     /**
-     * Validates and creates a new WelcomeEmailRequestDTO.
+     * Validates and creates a new WelcomeEmailRequestDTO with default values.
      */
     public WelcomeEmailRequestDTO {
-        if (messageId.isBlank()) {
-            throw new IllegalArgumentException("Message ID cannot be blank");
-        }
-        if (version.isBlank()) {
-            throw new IllegalArgumentException("Version cannot be blank");
-        }
-        if (to.isBlank()) {
-            throw new IllegalArgumentException("Recipient email cannot be blank");
-        }
-        if (customerName.isBlank()) {
-            throw new IllegalArgumentException("Customer name cannot be blank");
-        }
+        // Validate required fields
+        messageId = EmailRequestUtils.validateNotBlank(messageId, "Message ID");
+        version = EmailRequestUtils.validateNotBlank(version, "Version");
+        to = EmailRequestUtils.validateNotBlank(to, "Recipient email");
+        customerName = EmailRequestUtils.validateNotBlank(customerName, "Customer name");
 
-        // Generate subject if not provided
+        // Set default values
         subject = subject != null && !subject.isBlank() ? subject : "Welcome to Our Store!";
-
-        // Set default timestamp if not provided
-        timestamp = timestamp != null ? timestamp : LocalDateTime.now();
-
-        // Ensure additionalData is not null
-        additionalData = additionalData != null ? additionalData : Map.of();
+        additionalData = EmailRequestUtils.ensureMapNotNull(additionalData);
+        timestamp = EmailRequestUtils.ensureTimestampNotNull(timestamp);
     }
 
     @Override
@@ -86,13 +76,12 @@ public record WelcomeEmailRequestDTO(
 
     @Override
     public Map<String, Object> getTemplateData() {
-        Map<String, Object> data = new HashMap<>();
-        data.put("customerName", customerName);
-        data.put("couponCode", couponCode);
+        Map<String, Object> data = EmailRequestUtils.createBaseTemplateData(
+                messageId, timestamp, additionalData);
 
-        // Add any additional data
-        if (additionalData != null) {
-            data.putAll(additionalData);
+        data.put("customerName", customerName);
+        if (couponCode != null && !couponCode.isBlank()) {
+            data.put("couponCode", couponCode);
         }
 
         return data;
@@ -103,8 +92,8 @@ public record WelcomeEmailRequestDTO(
      */
     public static WelcomeEmailRequestDTOBuilder defaultBuilder() {
         return builder()
-                .messageId(UUID.randomUUID().toString())
-                .version("1.0")
+                .messageId(EmailRequestUtils.generateMessageId())
+                .version(EmailRequestUtils.getCurrentVersion())
                 .timestamp(LocalDateTime.now());
     }
 }

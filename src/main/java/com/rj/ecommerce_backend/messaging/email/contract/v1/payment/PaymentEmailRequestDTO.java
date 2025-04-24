@@ -2,8 +2,11 @@ package com.rj.ecommerce_backend.messaging.email.contract.v1.payment;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.rj.ecommerce_backend.messaging.email.contract.v1.EcommerceEmailRequest;
+import com.rj.ecommerce_backend.messaging.email.contract.v1.EmailRequestUtils;
 import com.rj.ecommerce_backend.messaging.email.contract.v1.EmailTemplate;
 import com.rj.ecommerce_backend.messaging.email.contract.v1.common.MoneyDTO;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.With;
@@ -19,15 +22,15 @@ import java.util.UUID;
 @Builder
 @With
 public record PaymentEmailRequestDTO(
-        @NonNull String messageId,
-        @NonNull String version,
-        @NonNull String to,
+        @NonNull @NotBlank String messageId,
+        @NonNull @NotBlank String version,
+        @NonNull @NotBlank String to,
         String subject,
-        @NonNull EmailTemplate template,
-        @NonNull String orderId,
+        @NonNull @NotBlank EmailTemplate template,
+        @NonNull @NotBlank String orderId,
         String paymentId,
-        @NonNull String paymentStatus,
-        MoneyDTO paymentAmount,
+        @NonNull @NotBlank String paymentStatus,
+        @NotNull MoneyDTO paymentAmount,
         Map<String, Object> additionalData,
         LocalDateTime timestamp
 ) implements EcommerceEmailRequest {
@@ -36,43 +39,15 @@ public record PaymentEmailRequestDTO(
      * Validates and creates a new PaymentEmailRequestDTO.
      */
     public PaymentEmailRequestDTO {
-        if (messageId.isBlank()) {
-            throw new IllegalArgumentException("Message ID cannot be blank");
-        }
-        if (version.isBlank()) {
-            throw new IllegalArgumentException("Version cannot be blank");
-        }
-        if (to.isBlank()) {
-            throw new IllegalArgumentException("Recipient email cannot be blank");
-        }
-        if (orderId.isBlank()) {
-            throw new IllegalArgumentException("Order ID cannot be blank");
-        }
-        if (paymentStatus.isBlank()) {
-            throw new IllegalArgumentException("Payment status cannot be blank");
-        }
-
         // Generate subject if not provided
-        subject = subject != null && !subject.isBlank() ? subject : generateSubject(template, orderId);
+        subject = subject != null && !subject.isBlank() ? subject :
+                EmailRequestUtils.generatePaymentSubject(template, orderId);
 
         // Set default timestamp if not provided
-        timestamp = timestamp != null ? timestamp : LocalDateTime.now();
+        timestamp = EmailRequestUtils.ensureTimestampNotNull(timestamp);
 
         // Ensure additionalData is not null
-        additionalData = additionalData != null ? additionalData : Map.of();
-    }
-
-    /**
-     * Generates a subject line based on the template and order number.
-     */
-    private static String generateSubject(EmailTemplate template, String orderId) {
-        return switch (template) {
-            case PAYMENT_CONFIRMATION -> "Payment Confirmed - Order #" + orderId;
-            case PAYMENT_FAILED -> "Payment Failed - Order #" + orderId;
-            case PAYMENT_ERROR_ADMIN -> "Payment Processing Error - Order #" + orderId;
-            case PAYMENT_ERROR_CUSTOMER -> "Payment Processing Update - Order #" + orderId;
-            default -> "Payment Information - Order #" + orderId;
-        };
+        additionalData = EmailRequestUtils.ensureMapNotNull(additionalData);
     }
 
     @Override
@@ -108,16 +83,14 @@ public record PaymentEmailRequestDTO(
     @Override
     @JsonIgnore
     public Map<String, Object> getTemplateData() {
-        Map<String, Object> data = new HashMap<>();
+        Map<String, Object> data = EmailRequestUtils.createBaseTemplateData(
+                messageId, timestamp, additionalData);
+
+        // Add payment-specific data
         data.put("orderId", orderId);
         data.put("paymentId", paymentId);
         data.put("paymentStatus", paymentStatus);
         data.put("paymentAmount", paymentAmount);
-
-        // Add any additional data
-        if (additionalData != null) {
-            data.putAll(additionalData);
-        }
 
         return data;
     }
@@ -127,8 +100,8 @@ public record PaymentEmailRequestDTO(
      */
     public static PaymentEmailRequestDTOBuilder defaultBuilder() {
         return builder()
-                .messageId(UUID.randomUUID().toString())
-                .version("1.0")
+                .messageId(EmailRequestUtils.generateMessageId())
+                .version(EmailRequestUtils.getCurrentVersion())
                 .timestamp(LocalDateTime.now());
     }
 }

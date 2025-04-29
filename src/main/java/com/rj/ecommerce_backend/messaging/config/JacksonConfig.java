@@ -19,6 +19,7 @@ public class JacksonConfig {
      * Includes NON_FINAL default typing.
      */
     @Bean
+    @Qualifier("rabbitObjectMapper") // <<< Add Qualifier
     public ObjectMapper rabbitObjectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());

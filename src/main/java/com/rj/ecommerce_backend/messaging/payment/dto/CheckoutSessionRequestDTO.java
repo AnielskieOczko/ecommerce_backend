@@ -11,7 +11,7 @@ public record CheckoutSessionRequestDTO(
         String customerEmail,
         String successUrl,
         String cancelUrl,
-        String currency,
+//        String currency,
         List<CheckoutLineItemDTO> lineItems,
         Map<String, String> metadata
 ) {

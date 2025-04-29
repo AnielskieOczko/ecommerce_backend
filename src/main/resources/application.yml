@@ -131,6 +131,7 @@ storage:
   location: ${user.home}/ecommerce/product-images/local
   cleanup-schedule: "0 0 * * * *"
 
+
 ---
 # CI profile (for GitHub Actions)
 spring:

@@ -1,7 +1,7 @@
 package com.rj.ecommerce_backend.messaging.email.producer;
 
 import com.rj.ecommerce_backend.messaging.common.producer.AbstractMessageProducer;
-import com.rj.ecommerce_backend.messaging.email.dto.EmailNotificationRequest;
+import com.rj.ecommerce_backend.messaging.email.contract.v1.EcommerceEmailRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
@@ -17,11 +17,11 @@ public class EmailMessageProducer extends AbstractMessageProducer {
         super(rabbitTemplate);
     }
 
-    public void sendEmail(EmailNotificationRequest emailRequest, String correlationId) {
+    public void sendEmail(EcommerceEmailRequest request, String correlationId) {
         sendMessage(
                 EMAIL_EXCHANGE,
                 ROUTING_KEY,
-                emailRequest,
+                request,
                 correlationId
         );
     }

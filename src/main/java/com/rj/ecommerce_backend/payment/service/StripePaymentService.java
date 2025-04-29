@@ -15,8 +15,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -127,7 +129,8 @@ public class StripePaymentService {
                         .quantity(item.getQuantity())
                         .currency(currency)
                         .build())
-                .toList();
+                // Use Collectors.toCollection(ArrayList::new) instead of .toList()
+                .collect(Collectors.toCollection(ArrayList::new)); // <<<--- MODIFIED LINE
 
         // Create checkout session request
         return CheckoutSessionRequestDTO.builder()
@@ -136,7 +139,7 @@ public class StripePaymentService {
                 .successUrl(successUrl)
                 .cancelUrl(cancelUrl)
                 .lineItems(lineItems)
-                .currency(currency)
+//                .currency(currency)
                 .metadata(metadata)
                 .build();
     }

@@ -21,11 +21,14 @@ public abstract class AbstractMessageProducer {
             };
 
             rabbitTemplate.convertAndSend(exchange, routingKey, message, messagePostProcessor);
-            log.info("Sent message to exchange: {}, routing key: {}, message: {}", exchange, routingKey, message);
+
+            // Separate logging levels for better log management
+            log.info("Sent message to exchange: {}, routing key: {}", exchange, routingKey);
+            log.debug("Message details: {}", message);
         } catch (Exception e) {
-            log.error("Failed to send message to exchange: {}, routing key: {}, message: {}", exchange, routingKey, message, e);
+            log.error("Failed to send message to exchange: {}, routing key: {}",
+                    exchange, routingKey, e);
             throw new MessagePublishException("Failed to publish message", e);
         }
-
     }
 }

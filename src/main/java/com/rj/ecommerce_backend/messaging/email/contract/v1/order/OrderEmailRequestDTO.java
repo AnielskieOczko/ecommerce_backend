@@ -2,7 +2,6 @@ package com.rj.ecommerce_backend.messaging.email.contract.v1.order;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.rj.ecommerce_backend.messaging.email.contract.v1.EcommerceEmailRequest;
-import com.rj.ecommerce_backend.messaging.email.contract.v1.EmailRequestUtils;
 import com.rj.ecommerce_backend.messaging.email.contract.v1.EmailTemplate;
 import com.rj.ecommerce_backend.messaging.email.contract.v1.common.AddressDTO;
 import com.rj.ecommerce_backend.messaging.email.contract.v1.common.CustomerDTO;
@@ -10,15 +9,15 @@ import com.rj.ecommerce_backend.messaging.email.contract.v1.common.MoneyDTO;
 import com.rj.ecommerce_backend.order.enums.OrderStatus;
 import com.rj.ecommerce_backend.order.enums.PaymentMethod;
 import com.rj.ecommerce_backend.order.enums.ShippingMethod;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.With;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Data Transfer Object for order-related email requests.
@@ -26,15 +25,15 @@ import java.util.Map;
 @Builder
 @With
 public record OrderEmailRequestDTO(
-        @NonNull @NotBlank String messageId,
-        @NonNull @NotBlank String version,
-        @NonNull @NotBlank String to,
+        @NonNull String messageId,
+        @NonNull String version,
+        @NonNull String to,
         String subject,
         @NonNull EmailTemplate template,
-        @NonNull @NotBlank String orderId,
+        @NonNull String orderId,
         String orderNumber,
         CustomerDTO customer,
-        @NonNull @NotEmpty List<OrderItemDTO> items,
+        @NonNull List<OrderItemDTO> items,
         @NonNull MoneyDTO totalAmount,
         AddressDTO shippingAddress,
         ShippingMethod shippingMethod,
@@ -50,20 +49,46 @@ public record OrderEmailRequestDTO(
      * Validates and creates a new OrderEmailRequestDTO.
      */
     public OrderEmailRequestDTO {
-        // Validate required fields (additional validation beyond @NonNull and @NotBlank)
+        if (messageId.isBlank()) {
+            throw new IllegalArgumentException("Message ID cannot be blank");
+        }
+        if (version.isBlank()) {
+            throw new IllegalArgumentException("Version cannot be blank");
+        }
+        if (to.isBlank()) {
+            throw new IllegalArgumentException("Recipient email cannot be blank");
+        }
+        if (orderId.isBlank()) {
+            throw new IllegalArgumentException("Order ID cannot be blank");
+        }
         if (items.isEmpty()) {
             throw new IllegalArgumentException("Order must have at least one item");
         }
 
         // Generate subject if not provided
-        subject = subject != null && !subject.isBlank() ? subject :
-                EmailRequestUtils.generateOrderSubject(template, orderNumber);
+        subject = subject != null && !subject.isBlank() ? subject : generateSubject(template, orderNumber);
 
         // Set default timestamp if not provided
-        timestamp = EmailRequestUtils.ensureTimestampNotNull(timestamp);
+        timestamp = timestamp != null ? timestamp : LocalDateTime.now();
 
         // Ensure additionalData is not null
-        additionalData = EmailRequestUtils.ensureMapNotNull(additionalData);
+        additionalData = additionalData != null ? additionalData : Map.of();
+    }
+
+    /**
+     * Generates a subject line based on the template and order number.
+     */
+    private static String generateSubject(EmailTemplate template, String orderNumber) {
+        String orderRef = orderNumber != null && !orderNumber.isBlank() ?
+                " #" + orderNumber : "";
+
+        return switch (template) {
+            case ORDER_CONFIRMATION -> "Your Order" + orderRef + " Confirmation";
+            case ORDER_SHIPMENT -> "Your Order" + orderRef + " Has Been Shipped";
+            case ORDER_CANCELLED -> "Your Order" + orderRef + " Has Been Cancelled";
+            case ORDER_REFUNDED -> "Your Order" + orderRef + " Has Been Refunded";
+            default -> "Information About Your Order" + orderRef;
+        };
     }
 
     @Override
@@ -99,10 +124,7 @@ public record OrderEmailRequestDTO(
     @Override
     @JsonIgnore
     public Map<String, Object> getTemplateData() {
-        Map<String, Object> data = EmailRequestUtils.createBaseTemplateData(
-                messageId, timestamp, additionalData);
-
-        // Add order-specific data
+        Map<String, Object> data = new HashMap<>();
         data.put("orderId", orderId);
         data.put("orderNumber", orderNumber);
         data.put("customer", customer);
@@ -115,6 +137,11 @@ public record OrderEmailRequestDTO(
         data.put("orderDate", orderDate);
         data.put("orderStatus", orderStatus);
 
+        // Add any additional data
+        if (additionalData != null) {
+            data.putAll(additionalData);
+        }
+
         return data;
     }
 
@@ -123,8 +150,8 @@ public record OrderEmailRequestDTO(
      */
     public static OrderEmailRequestDTOBuilder defaultBuilder() {
         return builder()
-                .messageId(EmailRequestUtils.generateMessageId())
-                .version(EmailRequestUtils.getCurrentVersion())
+                .messageId(UUID.randomUUID().toString())
+                .version("1.0")
                 .timestamp(LocalDateTime.now());
     }
 }

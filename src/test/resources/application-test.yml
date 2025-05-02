@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+    show-sql: true
+  flyway:
+    enabled: false
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        auto-startup: false
+
+# JWT Configuration for testing
+jwt:
+  secret: testsecretkeytestsecretkeytestsecretkeytestsecretkeytestsecretkey
+  expirationMs: 60000  # 1 minute
+  refresh-token-expiration: 120000  # 2 minutes
+
+# Storage configuration for testing
+storage:
+  location: ${java.io.tmpdir}/ecommerce-test/product-images
+  cleanup-enabled: false
